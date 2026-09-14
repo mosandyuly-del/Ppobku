@@ -19,7 +19,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-# Hapus vendor & cache bawaan lokal
 RUN rm -rf vendor bootstrap/cache/*.php
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -32,4 +31,4 @@ RUN mkdir -p database storage/framework/views storage/framework/sessions storage
 
 EXPOSE 8080
 
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
+CMD php artisan migrate:force && php artisan serve --host=0.0.0.0 --port=8080
