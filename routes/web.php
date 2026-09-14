@@ -33,22 +33,19 @@ Route::get('/category/{slug}', function ($slug) {
         ];
 
         $keywords = $categoryMap[$slug] ?? [$slug];
-        $columns = Schema::getColumnListing('products');
-        $searchable = array_intersect($columns, ['name', 'category', 'brand', 'sku', 'code']);
 
         $query = DB::table('products');
-        if (!empty($searchable)) {
-            $query->where(function ($q) use ($keywords, $searchable) {
-                foreach ($keywords as $word) {
-                    foreach ($searchable as $col) {
-                        $q->orWhere($col, 'LIKE', '%' . $word . '%');
-                    }
-                }
-            });
-        }
+        $query->where(function ($q) use ($keywords) {
+            foreach ($keywords as $word) {
+                $q->orWhere('category', 'LIKE', '%' . $word . '%')
+                  ->orWhere('name', 'LIKE', '%' . $word . '%')
+                  ->orWhere('brand', 'LIKE', '%' . $word . '%');
+            }
+        });
 
         $products = $query->get();
 
+        // Jika filter khusus kosong, tampilkan seluruh produk yang tersedia
         if ($products->isEmpty()) {
             $products = DB::table('products')->get();
         }
@@ -66,8 +63,8 @@ Route::post('/checkout', function (Request $request) {
     $targetNo = $request->input('target_no');
 
     $product = DB::table('products')
-        ->where('sku', $productCode)
-        ->orWhere('code', $productCode)
+        ->where('code', $productCode)
+        ->orWhere('sku', $productCode)
         ->first();
 
     if (!$product) {
@@ -88,7 +85,7 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Route Login & Handlers
+// Route Login & Admin Handlers
 Route::get('/login', function () {
     if (view()->exists('auth.login')) {
         return view('auth.login');
