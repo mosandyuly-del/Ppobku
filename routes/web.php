@@ -13,21 +13,33 @@ Route::get('/', function () {
 
 Route::get('/category/{slug}', function ($slug) {
     $categoryMap = [
-        'game' => 'Games',
-        'pulsa' => 'Pulsa',
-        'data' => 'Data',
-        'pln-token' => 'PLN',
-        'pln-bill' => 'PLN',
-        'pdam' => 'PDAM',
+        'game' => ['games', 'game', 'voucher'],
+        'pulsa' => ['pulsa', 'indosat', 'telkomsel', 'xl', 'tri', 'smartfren', 'axis'],
+        'data' => ['data', 'paket data', 'internet'],
+        'pln-token' => ['pln', 'token'],
+        'pln-bill' => ['pln', 'tagihan'],
+        'pdam' => ['pdam', 'air'],
     ];
 
-    $categoryName = $categoryMap[$slug] ?? $slug;
+    $keywords = $categoryMap[$slug] ?? [$slug];
     $products = [];
 
     if (Schema::hasTable('products')) {
-        $products = DB::table('products')
-            ->where('category', 'LIKE', '%' . $categoryName . '%')
-            ->get();
+        $query = DB::table('products');
+        
+        $query->where(function ($q) use ($keywords) {
+            foreach ($keywords as $word) {
+                $q->orWhereRaw('LOWER(category) LIKE ?', ['%' . strtolower($word) . '%'])
+                  ->orWhereRaw('LOWER(name) LIKE ?', ['%' . strtolower($word) . '%']);
+            }
+        });
+
+        $products = $query->get();
+        
+        // Jika masih kosong, tampilkan semua produk sebagai fallback
+        if ($products->isEmpty()) {
+            $products = DB::table('products')->limit(30)->get();
+        }
     }
 
     return view('category', [
