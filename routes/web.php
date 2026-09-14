@@ -34,3 +34,7 @@ Route::post('/api/callback/digiflazz', [CallbackController::class, 'handleDigifl
 Route::get('/my-ip', function () {
     return file_get_contents('https://api.ipify.org');
 });
+
+Route::get('/cek-ip', function () {
+    return file_get_contents('https://api.ipify.org');
+});
