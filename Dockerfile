@@ -19,13 +19,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-# Hapus sisa-sisa vendor dan cache lokal agar container membuat dari nol
-RUN rm -rf vendor composer.lock bootstrap/cache/*.php
+# Hapus vendor & cache bawaan lokal
+RUN rm -rf vendor bootstrap/cache/*.php
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Install dependensi baru secara total
-RUN composer update --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
     && touch database/database.sqlite \
