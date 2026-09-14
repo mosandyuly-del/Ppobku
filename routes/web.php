@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 // Halaman Utama
@@ -76,7 +77,6 @@ Route::post('/checkout', function (Request $request) {
     $trxId = 'TRX-' . time() . rand(100, 999);
     $totalBayar = $product->price ?? 0;
 
-    // Standard Static QRIS String (Valid QRIS Payload Format)
     $qrisPayload = "00020101021126570011ID.NOBU.WWW011893600503000008807902150000000000000000303UMI51440014ID.QRIS.WWW0215ID10200212345675204581253033605802ID5913MOSANDY STORE6007JAKARTA63046C41";
 
     return view('checkout', [
@@ -88,12 +88,15 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Route Login & Admin Dashboard Access
+// Route Login & Admin Dashboard Access dengan Nama Alias 'login.perform' & 'login.post'
 Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
+    if (view()->exists('auth.login')) {
+        return view('auth.login');
+    }
+    return view('welcome');
+})->name('login')->name('login.show');
 
-Route::post('/login', function (Request $request) {
+$loginHandler = function (Request $request) {
     $credentials = $request->only('email', 'password');
 
     if (Auth::attempt($credentials)) {
@@ -104,7 +107,9 @@ Route::post('/login', function (Request $request) {
     return back()->withErrors([
         'email' => 'Kredensial email atau password admin salah.',
     ]);
-});
+};
+
+Route::post('/login', $loginHandler)->name('login.perform')->name('login.post');
 
 Route::get('/admin', function () {
     if (!Auth::check()) {
@@ -116,4 +121,4 @@ Route::get('/admin', function () {
 Route::get('/logout', function () {
     Auth::logout();
     return redirect('/');
-});
+})->name('logout');
