@@ -19,12 +19,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-# Hapus sisa folder vendor/cache jika terbawa saat COPY
 RUN rm -rf vendor bootstrap/cache/*.php
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
+# Jalankan composer update agar mengunduh versi Symfony yang 100% kompatibel dengan PHP 8.3
+RUN composer update --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
 
 RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
     && touch database/database.sqlite \
