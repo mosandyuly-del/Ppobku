@@ -51,8 +51,9 @@ class SyncDigiflazz extends Command
                     $skuCode = $item['buyer_sku_code'] ?? ('SKU-' . rand(1000, 9999));
 
                     DB::table('products')->updateOrInsert(
-                        ['sku' => $skuCode],
+                        ['code' => $skuCode],
                         [
+                            'sku' => $skuCode,
                             'name' => $item['product_name'] ?? 'Produk PPOB',
                             'category' => $item['category'] ?? 'Umum',
                             'brand' => $item['brand'] ?? 'Digiflazz',
@@ -67,22 +68,23 @@ class SyncDigiflazz extends Command
             }
         }
 
-        // Dummy catalog fallback jika API kosong/gagal
+        // Dummy catalog fallback jika API kosong/gagal/terblokir IP
         if (!$dataFound) {
             $sampleProducts = [
-                ['sku' => 'PULSA5K', 'name' => 'Pulsa Reguler 5.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 6700],
-                ['sku' => 'PULSA10K', 'name' => 'Pulsa Reguler 10.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 11700],
-                ['sku' => 'ML86', 'name' => 'Mobile Legends 86 Diamonds', 'category' => 'Games', 'brand' => 'Mobile Legends', 'price' => 21500],
-                ['sku' => 'FF140', 'name' => 'Free Fire 140 Diamonds', 'category' => 'Games', 'brand' => 'Free Fire', 'price' => 20500],
-                ['sku' => 'DATA1GB', 'name' => 'Paket Data 1GB / 30 Hari', 'category' => 'Data', 'brand' => 'Indosat', 'price' => 14500],
-                ['sku' => 'PLN20K', 'name' => 'Token PLN 20.000', 'category' => 'PLN', 'brand' => 'PLN', 'price' => 21500],
-                ['sku' => 'PDAM1', 'name' => 'Pembayaran Tagihan PDAM', 'category' => 'PDAM', 'brand' => 'PDAM', 'price' => 2500],
+                ['code' => 'PULSA5K', 'sku' => 'PULSA5K', 'name' => 'Pulsa Reguler 5.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 6700],
+                ['code' => 'PULSA10K', 'sku' => 'PULSA10K', 'name' => 'Pulsa Reguler 10.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 11700],
+                ['code' => 'ML86', 'sku' => 'ML86', 'name' => 'Mobile Legends 86 Diamonds', 'category' => 'Games', 'brand' => 'Mobile Legends', 'price' => 21500],
+                ['code' => 'FF140', 'sku' => 'FF140', 'name' => 'Free Fire 140 Diamonds', 'category' => 'Games', 'brand' => 'Free Fire', 'price' => 20500],
+                ['code' => 'DATA1GB', 'sku' => 'DATA1GB', 'name' => 'Paket Data 1GB / 30 Hari', 'category' => 'Data', 'brand' => 'Indosat', 'price' => 14500],
+                ['code' => 'PLN20K', 'sku' => 'PLN20K', 'name' => 'Token PLN 20.000', 'category' => 'PLN', 'brand' => 'PLN', 'price' => 21500],
+                ['code' => 'PDAM1', 'sku' => 'PDAM1', 'name' => 'Pembayaran Tagihan PDAM', 'category' => 'PDAM', 'brand' => 'PDAM', 'price' => 2500],
             ];
 
             foreach ($sampleProducts as $sp) {
                 DB::table('products')->updateOrInsert(
-                    ['sku' => $sp['sku']],
+                    ['code' => $sp['code']],
                     [
+                        'sku' => $sp['sku'],
                         'name' => $sp['name'],
                         'category' => $sp['category'],
                         'brand' => $sp['brand'],
