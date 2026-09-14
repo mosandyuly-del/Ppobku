@@ -19,7 +19,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-# Tambahkan ENV COMPOSER_ALLOW_SUPERUSER dan --no-scripts agar build tidak error
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
 
@@ -29,4 +28,4 @@ RUN mkdir -p database storage/framework/views storage/framework/sessions storage
 
 EXPOSE 8080
 
-CMD php artisan package:discover --ansi && php artisan migrate:force --seed && php artisan serve --host=0.0.0.0 --port=8080
+CMD php artisan migrate:force --seed && php artisan serve --host=0.0.0.0 --port=8080
