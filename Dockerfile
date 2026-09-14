@@ -19,13 +19,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-# Bersihkan cache internal bawaan repository
-RUN rm -rf bootstrap/cache/*.php vendor
+# Paksa bersihkan sisa vendor & cache internal jika terbawa
+RUN rm -rf vendor bootstrap/cache/*.php
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Install dependensi bersih dari internet
-RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
+# Flag --clear-cache memastikan composer tidak mengambil paket dari cache internal container
+RUN composer clear-cache && composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
 
 RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
     && touch database/database.sqlite \
