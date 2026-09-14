@@ -1,4 +1,4 @@
-FROM php:8.3-cli
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
     sqlite3 \
@@ -19,12 +19,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
-RUN rm -rf vendor bootstrap/cache/*.php
+# Clean local cache & lock file inside image
+RUN rm -rf vendor composer.lock bootstrap/cache/*.php
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Jalankan composer update agar mengunduh versi Symfony yang 100% kompatibel dengan PHP 8.3
-RUN composer update --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
+# Install fresh dependencies for PHP 8.2
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
 RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
     && touch database/database.sqlite \
