@@ -38,3 +38,34 @@ Route::get('/my-ip', function () {
 Route::get('/cek-ip', function () {
     return file_get_contents('https://api.ipify.org');
 });
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+
+Route::get('/category/{slug}', function ($slug) {
+    // Peta kategori URL ke nama kategori Digiflazz
+    $categoryMap = [
+        'game' => 'Games',
+        'pulsa' => 'Pulsa',
+        'data' => 'Data',
+        'pln-token' => 'PLN',
+        'pln-bill' => 'PLN',
+        'pdam' => 'PDAM',
+    ];
+
+    $categoryName = $categoryMap[$slug] ?? $slug;
+    
+    // Ambil produk dari database
+    $products = [];
+    if (\Schema::hasTable('products')) {
+        $products = DB::table('products')
+            ->where('category', 'LIKE', '%' . $categoryName . '%')
+            ->where('status', 'active')
+            ->get();
+    }
+
+    return view('category', [
+        'title' => strtoupper(str_replace('-', ' ', $slug)),
+        'products' => $products
+    ]);
+});
