@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     if (view()->exists('home')) {
@@ -15,7 +16,6 @@ Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
     if (Schema::hasTable('products')) {
-        // Jika database masih kosong, jalankan sync darurat di tempat
         if (DB::table('products')->count() == 0) {
             \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
         }
@@ -31,7 +31,7 @@ Route::get('/category/{slug}', function ($slug) {
 
         $keywords = $categoryMap[$slug] ?? [$slug];
         $columns = Schema::getColumnListing('products');
-        $searchable = array_intersect($columns, ['name', 'category', 'brand', 'code']);
+        $searchable = array_intersect($columns, ['name', 'category', 'brand', 'sku', 'code']);
 
         $query = DB::table('products');
         if (!empty($searchable)) {
@@ -46,7 +46,6 @@ Route::get('/category/{slug}', function ($slug) {
 
         $products = $query->get();
 
-        // Fallback jika tidak ada filter yang cocok: tampilkan seluruh produk yang tersedia
         if ($products->isEmpty()) {
             $products = DB::table('products')->get();
         }
@@ -55,6 +54,33 @@ Route::get('/category/{slug}', function ($slug) {
     return view('category', [
         'title' => strtoupper(str_replace('-', ' ', $slug)),
         'products' => $products
+    ]);
+});
+
+Route::post('/checkout', function (Request $request) {
+    $productCode = $request->input('product_code');
+    $targetNo = $request->input('target_no');
+
+    $product = DB::table('products')
+        ->where('sku', $productCode)
+        ->orWhere('code', $productCode)
+        ->first();
+
+    if (!$product) {
+        return back()->with('error', 'Produk tidak ditemukan!');
+    }
+
+    $trxId = 'TRX-' . time() . rand(100, 999);
+    $totalBayar = $product->price ?? 0;
+
+    $qrisData = "00020101021226680014ID.LINKAJA.WWW011893600911002100080303UMI51440014ID.QRIS.WWW0215ID1020021234567520458125303360540" . $totalBayar . "5802ID5913MOSANDY STORE6007JAKARTA6304ABCD";
+
+    return view('checkout', [
+        'trx_id' => $trxId,
+        'product' => $product,
+        'target_no' => $targetNo,
+        'total' => $totalBayar,
+        'qris_data' => $qrisData
     ]);
 });
 

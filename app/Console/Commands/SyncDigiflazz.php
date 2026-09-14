@@ -13,6 +13,11 @@ class SyncDigiflazz extends Command
 
     public function handle()
     {
+        if (!Schema::hasTable('products')) {
+            $this->error('Tabel products tidak ditemukan!');
+            return 1;
+        }
+
         $username = config('services.digiflazz.username', env('DIGIFLAZZ_USERNAME'));
         $apiKey = config('services.digiflazz.key', env('DIGIFLAZZ_KEY'));
 
@@ -43,10 +48,10 @@ class SyncDigiflazz extends Command
                 $dataFound = true;
                 foreach ($result['data'] as $item) {
                     $hargaJual = ($item['price'] ?? 0) + 1500;
-                    $sku = $item['buyer_sku_code'] ?? ('SKU-' . rand(1000, 9999));
+                    $skuCode = $item['buyer_sku_code'] ?? ('SKU-' . rand(1000, 9999));
 
                     DB::table('products')->updateOrInsert(
-                        ['code' => $sku],
+                        ['sku' => $skuCode],
                         [
                             'name' => $item['product_name'] ?? 'Produk PPOB',
                             'category' => $item['category'] ?? 'Umum',
@@ -62,21 +67,21 @@ class SyncDigiflazz extends Command
             }
         }
 
-        // Jika API Digiflazz gagal/kosong/IP terblokir, isi dengan katalog sampel otomatis
+        // Dummy catalog fallback jika API kosong/gagal
         if (!$dataFound) {
             $sampleProducts = [
-                ['code' => 'PULSA5K', 'name' => 'Pulsa Reguler 5.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 6700],
-                ['code' => 'PULSA10K', 'name' => 'Pulsa Reguler 10.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 11700],
-                ['code' => 'ML86', 'name' => 'Mobile Legends 86 Diamonds', 'category' => 'Games', 'brand' => 'Mobile Legends', 'price' => 21500],
-                ['code' => 'FF140', 'name' => 'Free Fire 140 Diamonds', 'category' => 'Games', 'brand' => 'Free Fire', 'price' => 20500],
-                ['code' => 'DATA1GB', 'name' => 'Paket Data 1GB / 30 Hari', 'category' => 'Data', 'brand' => 'Indosat', 'price' => 14500],
-                ['code' => 'PLN20K', 'name' => 'Token PLN 20.000', 'category' => 'PLN', 'brand' => 'PLN', 'price' => 21500],
-                ['code' => 'PDAM1', 'name' => 'Pembayaran Tagihan PDAM', 'category' => 'PDAM', 'brand' => 'PDAM', 'price' => 2500],
+                ['sku' => 'PULSA5K', 'name' => 'Pulsa Reguler 5.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 6700],
+                ['sku' => 'PULSA10K', 'name' => 'Pulsa Reguler 10.000', 'category' => 'Pulsa', 'brand' => 'Telkomsel', 'price' => 11700],
+                ['sku' => 'ML86', 'name' => 'Mobile Legends 86 Diamonds', 'category' => 'Games', 'brand' => 'Mobile Legends', 'price' => 21500],
+                ['sku' => 'FF140', 'name' => 'Free Fire 140 Diamonds', 'category' => 'Games', 'brand' => 'Free Fire', 'price' => 20500],
+                ['sku' => 'DATA1GB', 'name' => 'Paket Data 1GB / 30 Hari', 'category' => 'Data', 'brand' => 'Indosat', 'price' => 14500],
+                ['sku' => 'PLN20K', 'name' => 'Token PLN 20.000', 'category' => 'PLN', 'brand' => 'PLN', 'price' => 21500],
+                ['sku' => 'PDAM1', 'name' => 'Pembayaran Tagihan PDAM', 'category' => 'PDAM', 'brand' => 'PDAM', 'price' => 2500],
             ];
 
             foreach ($sampleProducts as $sp) {
                 DB::table('products')->updateOrInsert(
-                    ['code' => $sp['code']],
+                    ['sku' => $sp['sku']],
                     [
                         'name' => $sp['name'],
                         'category' => $sp['category'],
@@ -88,7 +93,6 @@ class SyncDigiflazz extends Command
                     ]
                 );
             }
-            $this->info('Mengisi database dengan katalog produk sampel (Bypass Mode).');
         }
 
         return 0;
