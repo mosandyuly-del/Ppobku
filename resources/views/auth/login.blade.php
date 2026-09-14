@@ -5,7 +5,7 @@
     <div class="col-md-5">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white text-center py-3">
-                <h5 class="card-title mb-0 fw-bold">Login Admin Toko PPOB</h5>
+                <h5 class="card-title mb-0 fw-bold">Login Admin MOSANDY STORE</h5>
             </div>
             <div class="card-body p-4">
                 @if(session('success'))
