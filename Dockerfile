@@ -21,8 +21,7 @@ COPY . .
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Paksa update paket symfony/http-foundation agar mendapatkan file Request.php yang bersih
-RUN composer update symfony/http-foundation --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
 
 RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
     && touch database/database.sqlite \
@@ -30,4 +29,4 @@ RUN mkdir -p database storage/framework/views storage/framework/sessions storage
 
 EXPOSE 8080
 
-CMD php artisan migrate:force --seed && php artisan serve --host=0.0.0.0 --port=8080
+CMD php artisan serve --host=0.0.0.0 --port=8080
