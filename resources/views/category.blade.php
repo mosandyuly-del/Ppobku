@@ -22,21 +22,21 @@
                 @foreach($products as $item)
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex justify-between items-center">
                         <div>
-                            <h3 class="font-bold text-gray-800 text-sm">{{ $item->name }}</h3>
+                            <h3 class="font-bold text-gray-800 text-sm">{{ $item->name ?? $item->product_name ?? 'Produk' }}</h3>
                             <p class="text-xs text-gray-500">{{ $item->brand ?? 'Digiflazz' }}</p>
                         </div>
                         <div class="text-right">
-                            <span class="text-blue-600 font-bold text-sm">Rp {{ number_format($item->price, 0, ',', '.') }}</span>
+                            <span class="text-blue-600 font-bold text-sm">Rp {{ number_format($item->price ?? 0, 0, ',', '.') }}</span>
                             <br>
-                            <button class="mt-1 text-xs bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Beli</button>
+                            <button class="mt-1 text-xs bg-blue-600 text-white px-3 py-1 rounded-md">Beli</button>
                         </div>
                     </div>
                 @endforeach
             </div>
         @else
-            <div class="bg-white p-6 rounded-xl text-center text-gray-500">
-                <p>Belum ada produk yang tersedia untuk kategori ini.</p>
-                <p class="text-xs mt-1 text-gray-400">Pastikan sinkronisasi harga Digiflazz sudah berjalan.</p>
+            <div class="bg-white p-6 rounded-xl text-center text-gray-500 shadow-sm">
+                <p class="font-semibold">Produk {{ $title }} Belum Tersedia</p>
+                <p class="text-xs mt-1 text-gray-400">Proses sinkronisasi data dari Digiflazz sedang berjalan di latar belakang.</p>
             </div>
         @endif
     </div>
