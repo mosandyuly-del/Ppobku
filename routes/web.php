@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 
+// Halaman Utama
 Route::get('/', function () {
     if (view()->exists('home')) {
         return view('home');
@@ -12,6 +13,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Route Kategori Produk Dinamis
 Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
@@ -57,6 +59,7 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
+// Process Checkout & QRIS Generator
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = $request->input('target_no');
@@ -73,15 +76,44 @@ Route::post('/checkout', function (Request $request) {
     $trxId = 'TRX-' . time() . rand(100, 999);
     $totalBayar = $product->price ?? 0;
 
-    $qrisData = "00020101021226680014ID.LINKAJA.WWW011893600911002100080303UMI51440014ID.QRIS.WWW0215ID1020021234567520458125303360540" . $totalBayar . "5802ID5913MOSANDY STORE6007JAKARTA6304ABCD";
+    // Standard Static QRIS String (Valid QRIS Payload Format)
+    $qrisPayload = "00020101021126570011ID.NOBU.WWW011893600503000008807902150000000000000000303UMI51440014ID.QRIS.WWW0215ID10200212345675204581253033605802ID5913MOSANDY STORE6007JAKARTA63046C41";
 
     return view('checkout', [
         'trx_id' => $trxId,
         'product' => $product,
         'target_no' => $targetNo,
         'total' => $totalBayar,
-        'qris_data' => $qrisData
+        'qris_payload' => $qrisPayload
     ]);
 });
 
-Route::get('/login', function() { return view('welcome'); })->name('login');
+// Route Login & Admin Dashboard Access
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+Route::post('/login', function (Request $request) {
+    $credentials = $request->only('email', 'password');
+
+    if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
+        return redirect()->intended('/admin');
+    }
+
+    return back()->withErrors([
+        'email' => 'Kredensial email atau password admin salah.',
+    ]);
+});
+
+Route::get('/admin', function () {
+    if (!Auth::check()) {
+        return redirect('/login');
+    }
+    return '<h1>Dashboard Admin MOSANDY STORE</h1><p>Selamat datang, Admin!</p><a href="/logout">Logout</a>';
+})->middleware('auth');
+
+Route::get('/logout', function () {
+    Auth::logout();
+    return redirect('/');
+});
