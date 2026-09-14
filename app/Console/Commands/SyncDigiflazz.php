@@ -13,11 +13,11 @@ class SyncDigiflazz extends Command
 
     public function handle()
     {
-        $username = config('services.digiflazz.username');
-        $apiKey = config('services.digiflazz.key');
+        $username = config('services.digiflazz.username', env('DIGIFLAZZ_USERNAME'));
+        $apiKey = config('services.digiflazz.key', env('DIGIFLAZZ_KEY'));
 
         if (!$username || !$apiKey) {
-            $this->error('Username atau API Key Digiflazz belum diatur di Variable Railway!');
+            $this->error('Kredensial Digiflazz belum dikonfigurasi!');
             return 1;
         }
 
@@ -41,10 +41,10 @@ class SyncDigiflazz extends Command
         $result = json_decode($response, true);
 
         if (isset($result['data']) && is_array($result['data'])) {
-            foreach ($result['data'] as $item) {
-                $hargaJual = $item['price'] + 1500;
+            if (Schema::hasTable('products')) {
+                foreach ($result['data'] as $item) {
+                    $hargaJual = $item['price'] + 1500;
 
-                if (Schema::hasTable('products')) {
                     DB::table('products')->updateOrInsert(
                         ['code' => $item['buyer_sku_code']],
                         [
@@ -53,17 +53,14 @@ class SyncDigiflazz extends Command
                             'brand' => $item['brand'],
                             'price_original' => $item['price'],
                             'price' => $hargaJual,
-                            'status' => $item['buyer_product_status'] && $item['seller_product_status'] ? 'active' : 'inactive',
+                            'status' => ($item['buyer_product_status'] && $item['seller_product_status']) ? 'active' : 'inactive',
                             'updated_at' => now(),
                         ]
                     );
                 }
+                $this->info('Sukses sinkronisasi produk Digiflazz (+Rp 1.500)!');
             }
-            $this->info('Berhasil menyinkronkan harga produk Digiflazz (+Rp 1.500)!');
-        } else {
-            $this->error('Gagal mengambil data dari Digiflazz.');
         }
-
         return 0;
     }
 }
