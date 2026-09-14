@@ -1,2 +1,4 @@
-vendor/
-bootstrap/cache/*.php
+/vendor
+/bootstrap/cache/*
+!.gitignore
+.env
