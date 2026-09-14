@@ -6,3 +6,4 @@
 /storage/framework/views/*
 /database/database.sqlite
 .env
+vendor/
