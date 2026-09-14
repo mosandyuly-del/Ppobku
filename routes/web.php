@@ -88,13 +88,13 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Route Login & Admin Dashboard Access dengan Nama Alias 'login.perform' & 'login.post'
+// Route Login & Handlers
 Route::get('/login', function () {
     if (view()->exists('auth.login')) {
         return view('auth.login');
     }
     return view('welcome');
-})->name('login')->name('login.show');
+})->name('login');
 
 $loginHandler = function (Request $request) {
     $credentials = $request->only('email', 'password');
@@ -109,7 +109,8 @@ $loginHandler = function (Request $request) {
     ]);
 };
 
-Route::post('/login', $loginHandler)->name('login.perform')->name('login.post');
+Route::post('/login', $loginHandler);
+Route::post('/login/perform', $loginHandler)->name('login.perform');
 
 Route::get('/admin', function () {
     if (!Auth::check()) {
