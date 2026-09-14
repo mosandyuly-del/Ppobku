@@ -19,8 +19,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
 
+# Bersihkan cache internal bawaan repository
+RUN rm -rf bootstrap/cache/*.php vendor
+
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
+# Install dependensi bersih dari internet
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
 
 RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
@@ -29,4 +33,4 @@ RUN mkdir -p database storage/framework/views storage/framework/sessions storage
 
 EXPOSE 8080
 
-CMD php artisan serve --host=0.0.0.0 --port=8080
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
