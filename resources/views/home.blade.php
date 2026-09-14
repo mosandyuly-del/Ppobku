@@ -1,112 +1,80 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOSANDY STORE - Layanan PPOB & Top Up Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans">
 
-@section('content')
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h5 class="card-title mb-0 fw-bold text-primary">Isi Pulsa & Paket Data</h5>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('order.store') }}" method="POST">
-                    @csrf
-                    
-                    <!-- Form Input Nomor HP -->
-                    <div class="mb-4">
-                        <label for="customer_no" class="form-label fw-semibold">Nomor Handphone</label>
-                        <input type="text" class="form-control form-control-lg @error('customer_no') is-invalid @enderror" 
-                               id="customer_no" name="customer_no" placeholder="Contoh: 081234567890" value="{{ old('customer_no') }}" required autocomplete="off">
-                        <div class="form-text" id="operator-info">Masukkan nomor HP untuk mendeteksi provider.</div>
-                        @error('customer_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <!-- Pilihan Produk Nominal -->
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Pilih Nominal</label>
-                        <div class="row g-2" id="product-container">
-                            @foreach($products as $product)
-                            <div class="col-6 col-md-4 product-card" data-brand="{{ strtolower($product->brand) }}">
-                                <input type="radio" class="btn-check" name="sku_code" id="sku_{{ $product->sku_code }}" value="{{ $product->sku_code }}" required>
-                                <label class="btn btn-outline-primary w-100 text-start p-3 h-100" for="sku_{{ $product->sku_code }}">
-                                    <div class="small text-muted">{{ $product->brand }}</div>
-                                    <div class="fw-bold">{{ $product->name }}</div>
-                                    <div class="text-success fw-semibold mt-1">Rp {{ number_format($product->price_sell, 0, ',', '.') }}</div>
-                                </label>
-                            </div>
-                            @endforeach
-                        </div>
-                        @error('sku_code') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <!-- Pilihan Metode Pembayaran -->
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Pilih Metode Pembayaran</label>
-                        <div class="row g-2">
-                            @foreach($paymentMethods as $pm)
-                            <div class="col-12 col-md-4">
-                                <input type="radio" class="btn-check" name="payment_method_id" id="pm_{{ $pm->id }}" value="{{ $pm->id }}" required>
-                                <label class="btn btn-outline-secondary w-100 text-start p-3" for="pm_{{ $pm->id }}">
-                                    <div class="fw-bold">{{ $pm->name }}</div>
-                                    <small class="text-muted">{{ $pm->code }}</small>
-                                </label>
-                            </div>
-                            @endforeach
-                        </div>
-                        @error('payment_method_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-lg w-100">Beli Sekarang</button>
-                </form>
+    <nav class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">MOSANDY STORE</h1>
+            <div>
+                <a href="/login" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">Masuk / Admin</a>
             </div>
         </div>
+    </nav>
+
+    <div class="bg-blue-500 text-white text-center py-8 px-4">
+        <h2 class="text-2xl font-bold mb-2">Pusat Isi Ulang & PPOB Terpercaya</h2>
+        <p class="text-sm opacity-90">Transaksi serba cepat, otomatis, dan 24 jam non-stop.</p>
     </div>
-</div>
-@endsection
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const phoneInput = document.getElementById('customer_no');
-    const operatorInfo = document.getElementById('operator-info');
-    const productCards = document.querySelectorAll('.product-card');
-
-    const prefixMap = {
-        'telkomsel': ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'],
-        'indosat': ['0814', '0815', '0816', '0855', '0856', '0857', '0858'],
-        'xl': ['0817', '0818', '0819', '0859', '0877', '0878']
-    };
-
-    phoneInput.addEventListener('input', function () {
-        const val = this.value.trim();
-        let detectedBrand = null;
-
-        if (val.length >= 4) {
-            const prefix = val.substring(0, 4);
-            for (const [brand, prefixes] of Object.entries(prefixMap)) {
-                if (prefixes.includes(prefix)) {
-                    detectedBrand = brand;
-                    break;
-                }
-            }
-        }
-
-        if (detectedBrand) {
-            operatorInfo.innerHTML = `Provider terdeteksi: <strong class="text-uppercase text-primary">${detectedBrand}</strong>`;
+    <!-- Menu PPOB Lengkap -->
+    <div class="container mx-auto px-4 -mt-6">
+        <div class="bg-white rounded-xl shadow-lg p-6 grid grid-cols-3 sm:grid-cols-6 gap-4 text-center">
             
-            productCards.forEach(card => {
-                if (card.dataset.brand === detectedBrand) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                    const radio = card.querySelector('input[type="radio"]');
-                    if (radio) radio.checked = false;
-                }
-            });
-        } else {
-            operatorInfo.innerText = 'Masukkan nomor HP untuk mendeteksi provider.';
-            productCards.forEach(card => card.style.display = 'block');
-        }
-    });
-});
-</script>
-@endpush
+            <a href="/category/game" class="flex flex-col items-center group">
+                <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-gray-700">Top Up Game</span>
+            </a>
+
+            <a href="/category/pulsa" class="flex flex-col items-center group">
+                <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-gray-700">Pulsa</span>
+            </a>
+
+            <a href="/category/data" class="flex flex-col items-center group">
+                <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-green-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-wifi"></i>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-gray-700">Paket Data</span>
+            </a>
+
+            <a href="/category/pln-token" class="flex flex-col items-center group">
+                <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-yellow-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-gray-700">Token Listrik</span>
+            </a>
+
+            <a href="/category/pln-bill" class="flex flex-col items-center group">
+                <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-gray-700">Tagihan Listrik</span>
+            </a>
+
+            <a href="/category/pdam" class="flex flex-col items-center group">
+                <div class="w-14 h-14 bg-cyan-100 text-cyan-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-cyan-600 group-hover:text-white transition">
+                    <i class="fa-solid fa-droplet"></i>
+                </div>
+                <span class="text-xs font-semibold mt-2 text-gray-700">PDAM</span>
+            </a>
+
+        </div>
+    </div>
+
+    <footer class="text-center py-6 text-xs text-gray-500 mt-8">
+        &copy; 2026 MOSANDY STORE. All Rights Reserved.
+    </footer>
+
+</body>
+</html>
