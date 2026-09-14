@@ -20,15 +20,20 @@
         @if(count($products) > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($products as $item)
+                    @php
+                        $nama = $item->name ?? $item->nama ?? $item->product_name ?? $item->title ?? 'Produk PPOB';
+                        $harga = $item->price ?? $item->harga ?? $item->price_sell ?? 0;
+                        $sub = $item->brand ?? $item->kategori ?? $item->code ?? 'Digiflazz';
+                    @endphp
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex justify-between items-center">
                         <div>
-                            <h3 class="font-bold text-gray-800 text-sm">{{ $item->name ?? $item->product_name ?? 'Produk' }}</h3>
-                            <p class="text-xs text-gray-500">{{ $item->brand ?? 'Digiflazz' }}</p>
+                            <h3 class="font-bold text-gray-800 text-sm">{{ $nama }}</h3>
+                            <p class="text-xs text-gray-500">{{ $sub }}</p>
                         </div>
                         <div class="text-right">
-                            <span class="text-blue-600 font-bold text-sm">Rp {{ number_format($item->price ?? 0, 0, ',', '.') }}</span>
+                            <span class="text-blue-600 font-bold text-sm">Rp {{ number_format($harga, 0, ',', '.') }}</span>
                             <br>
-                            <button class="mt-1 text-xs bg-blue-600 text-white px-3 py-1 rounded-md">Beli</button>
+                            <button class="mt-1 text-xs bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">Beli</button>
                         </div>
                     </div>
                 @endforeach

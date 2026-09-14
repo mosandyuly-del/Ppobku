@@ -12,33 +12,42 @@ Route::get('/', function () {
 });
 
 Route::get('/category/{slug}', function ($slug) {
-    $categoryMap = [
-        'game' => ['games', 'game', 'voucher'],
-        'pulsa' => ['pulsa', 'indosat', 'telkomsel', 'xl', 'tri', 'smartfren', 'axis'],
-        'data' => ['data', 'paket data', 'internet'],
-        'pln-token' => ['pln', 'token'],
-        'pln-bill' => ['pln', 'tagihan'],
-        'pdam' => ['pdam', 'air'],
-    ];
-
-    $keywords = $categoryMap[$slug] ?? [$slug];
-    $products = [];
+    $products = collect();
 
     if (Schema::hasTable('products')) {
+        $columns = Schema::getColumnListing('products');
         $query = DB::table('products');
-        
-        $query->where(function ($q) use ($keywords) {
-            foreach ($keywords as $word) {
-                $q->orWhereRaw('LOWER(category) LIKE ?', ['%' . strtolower($word) . '%'])
-                  ->orWhereRaw('LOWER(name) LIKE ?', ['%' . strtolower($word) . '%']);
-            }
-        });
+
+        // Peta pencarian berdasarkan slug
+        $categoryMap = [
+            'game' => ['game', 'voucher', 'mobile legends', 'free fire'],
+            'pulsa' => ['pulsa', 'telkomsel', 'indosat', 'xl', 'axis', 'tri', 'smartfren'],
+            'data' => ['data', 'paket', 'internet'],
+            'pln-token' => ['pln', 'token'],
+            'pln-bill' => ['pln', 'tagihan'],
+            'pdam' => ['pdam', 'air'],
+        ];
+
+        $keywords = $categoryMap[$slug] ?? [$slug];
+
+        // Cari kolom yang berpotensi menyimpan nama/kategori
+        $searchableColumns = array_intersect($columns, ['name', 'nama', 'title', 'brand', 'kategori', 'type', 'group', 'code']);
+
+        if (!empty($searchableColumns)) {
+            $query->where(function ($q) use ($keywords, $searchableColumns) {
+                foreach ($keywords as $word) {
+                    foreach ($searchableColumns as $col) {
+                        $q->orWhere($col, 'LIKE', '%' . $word . '%');
+                    }
+                }
+            });
+        }
 
         $products = $query->get();
-        
-        // Jika masih kosong, tampilkan semua produk sebagai fallback
+
+        // Fallback: Jika tidak ada yang cocok, tampilkan semua produk yang ada di tabel
         if ($products->isEmpty()) {
-            $products = DB::table('products')->limit(30)->get();
+            $products = DB::table('products')->limit(50)->get();
         }
     }
 
