@@ -17,11 +17,16 @@ RUN docker-php-ext-install pdo pdo_sqlite mbstring gd
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
+
+# Copy file composer lebih dulu agar Docker bisa memanfaatkan Cache
+COPY composer.json composer.lock ./
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
+
 COPY . .
 
 RUN rm -rf vendor bootstrap/cache/*.php
-
-ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
