@@ -1,5 +1,6 @@
 FROM php:8.3-cli
 
+# Install dependencies sistem yang dibutuhkan
 RUN apt-get update && apt-get install -y \
     sqlite3 \
     libsqlite3-dev \
@@ -9,22 +10,25 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    curl
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install ekstensi PHP
 RUN docker-php-ext-install pdo pdo_sqlite mbstring gd
 
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY . .
 
-# Install Composer tanpa error versi platform
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+# Abaikan pemeriksaan ekstensi lokal di composer.lock saat build image
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Buat direktori & atur permission
-RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs
-RUN touch database/database.sqlite
-RUN chmod -R 777 database storage
+# Penyiapan struktur folder & database
+RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs \
+    && touch database/database.sqlite \
+    && chmod -R 777 database storage
 
 EXPOSE 8080
 

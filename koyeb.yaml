@@ -1,0 +1,8 @@
+type: web
+name: ppobku
+routes:
+  - path: /
+    port: 8080
+ports:
+  - port: 8080
+    protocol: http

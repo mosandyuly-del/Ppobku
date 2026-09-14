@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Product;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\PaymentMethod;
 
 class OrderController extends Controller
 {
     public function store(Request $request)
     {
         $request->validate([
-            'customer_no' => 'required|numeric|digits_between:10,14',
+            'customer_no' => 'required|numeric',
             'sku_code' => 'required|exists:products,sku_code',
             'payment_method_id' => 'required|exists:payment_methods,id',
         ]);
@@ -38,19 +39,19 @@ class OrderController extends Controller
             ->where('invoice_number', $invoice_number)
             ->firstOrFail();
 
-        return view('order-detail', compact('order'));
+        return view('order_detail', compact('order'));
     }
 
     public function uploadProof(Request $request, $invoice_number)
     {
         $request->validate([
-            'proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'proof_of_payment' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $order = Order::where('invoice_number', $invoice_number)->firstOrFail();
 
-        if ($request->hasFile('proof')) {
-            $path = $request->file('proof')->store('proofs', 'public');
+        if ($request->hasFile('proof_of_payment')) {
+            $path = $request->file('proof_of_payment')->store('proofs', 'public');
             $order->update([
                 'proof_of_payment' => $path,
             ]);
@@ -61,23 +62,23 @@ class OrderController extends Controller
 
     public function checkStatusForm()
     {
-        return view('check-status');
+        return view('check_status');
     }
 
     public function checkStatusSearch(Request $request)
     {
         $request->validate([
-            'query' => 'required',
+            'query_search' => 'required|string',
         ]);
 
-        $search = $request->input('query');
+        $query = $request->query_search;
 
         $orders = Order::with(['paymentMethod', 'product'])
-            ->where('invoice_number', $search)
-            ->orWhere('customer_no', $search)
+            ->where('invoice_number', $query)
+            ->orWhere('customer_no', $query)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('check-status', compact('orders', 'search'));
+        return view('check_status', compact('orders', 'query'));
     }
 }
