@@ -20,9 +20,12 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
 
+# Buat direktori dan atur permission untuk SQLite & Storage
+RUN mkdir -p database storage/framework/views storage/framework/sessions storage/framework/cache storage/logs
 RUN touch database/database.sqlite
-RUN php artisan migrate:force --seed
+RUN chmod -R 777 database storage
 
 EXPOSE 8080
 
-CMD php artisan serve --host=0.0.0.0 --port=8080
+# Jalankan migrasi dan server secara otomatis saat container dinyalakan
+CMD php artisan migrate:force --seed && php artisan serve --host=0.0.0.0 --port=8080
