@@ -30,3 +30,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('/api/callback/digiflazz', [CallbackController::class, 'handleDigiflazz'])->name('callback.digiflazz');
+
+Route::get('/my-ip', function () {
+    return file_get_contents('https://api.ipify.org');
+});
