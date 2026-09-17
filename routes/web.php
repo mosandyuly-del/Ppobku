@@ -45,7 +45,6 @@ Route::get('/category/{slug}', function ($slug) {
 
         $products = $query->get();
 
-        // Jika filter khusus kosong, tampilkan seluruh produk yang tersedia
         if ($products->isEmpty()) {
             $products = DB::table('products')->get();
         }
@@ -85,7 +84,7 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Route Login & Admin Handlers
+// Route Login
 Route::get('/login', function () {
     if (view()->exists('auth.login')) {
         return view('auth.login');
@@ -109,11 +108,29 @@ $loginHandler = function (Request $request) {
 Route::post('/login', $loginHandler);
 Route::post('/login/perform', $loginHandler)->name('login.perform');
 
+// Route Admin Dashboard
 Route::get('/admin', function () {
     if (!Auth::check()) {
         return redirect('/login');
     }
-    return '<h1>Dashboard Admin MOSANDY STORE</h1><p>Selamat datang, Admin!</p><a href="/logout">Logout</a>';
+
+    $products = DB::table('products')->limit(50)->get();
+    $totalProducts = DB::table('products')->count();
+
+    return view('admin.dashboard', [
+        'products' => $products,
+        'totalProducts' => $totalProducts
+    ]);
+})->middleware('auth');
+
+Route::post('/admin/sync-now', function () {
+    if (!Auth::check()) {
+        return redirect('/login');
+    }
+
+    \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+
+    return back()->with('success', 'Berhasil melakukan sinkronisasi ulang data produk Digiflazz!');
 })->middleware('auth');
 
 Route::get('/logout', function () {
