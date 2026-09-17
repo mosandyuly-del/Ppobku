@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-// Halaman Utama
+// Halaman Utama Web
 Route::get('/', function () {
     if (view()->exists('home')) {
         return view('home');
@@ -34,7 +34,7 @@ Route::get('/category/{slug}', function ($slug) {
 
         $keywords = $categoryMap[$slug] ?? [$slug];
 
-        $query = DB::table('products');
+        $query = DB::table('products')->where('status', 'active');
         $query->where(function ($q) use ($keywords) {
             foreach ($keywords as $word) {
                 $q->orWhere('category', 'LIKE', '%' . $word . '%')
@@ -46,7 +46,7 @@ Route::get('/category/{slug}', function ($slug) {
         $products = $query->get();
 
         if ($products->isEmpty()) {
-            $products = DB::table('products')->get();
+            $products = DB::table('products')->where('status', 'active')->get();
         }
     }
 
@@ -84,7 +84,7 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Route Login
+// Route Auth Admin
 Route::get('/login', function () {
     if (view()->exists('auth.login')) {
         return view('auth.login');
@@ -108,15 +108,17 @@ $loginHandler = function (Request $request) {
 Route::post('/login', $loginHandler);
 Route::post('/login/perform', $loginHandler)->name('login.perform');
 
-// Route Admin Dashboard
+// Route Admin Dashboard Utama
 Route::get('/admin', function () {
     if (!Auth::check()) {
         return redirect('/login');
     }
 
-    $products = DB::table('products')->limit(100)->get();
+    $products = DB::table('products')->limit(150)->get();
     $totalProducts = DB::table('products')->count();
+    $activeProductsCount = DB::table('products')->where('status', 'active')->count();
 
+    // Hitung Rata-rata Margin Percent
     $totalMarginPercent = 0;
     $validCount = 0;
     foreach ($products as $p) {
@@ -129,11 +131,36 @@ Route::get('/admin', function () {
     }
     $avgMarginPercent = $validCount > 0 ? ($totalMarginPercent / $validCount) : 0;
 
+    // Cek Saldo Real-time ke Digiflazz
+    $username = config('services.digiflazz.username', env('DIGIFLAZZ_USERNAME'));
+    $apiKey = config('services.digiflazz.key', env('DIGIFLAZZ_KEY'));
+    $digiflazzBalance = 0;
+
+    if ($username && $apiKey) {
+        $sign = md5($username . $apiKey . 'depo');
+        $payload = ['cmd' => 'deposit', 'username' => $username, 'sign' => $sign];
+
+        $ch = curl_init('https://api.digiflazz.com/v1/cek-saldo');
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $resData = json_decode($response, true);
+        if (isset($resData['data']['deposit'])) {
+            $digiflazzBalance = $resData['data']['deposit'];
+        }
+    }
+
     return view('admin.dashboard', [
         'products' => $products,
         'totalProducts' => $totalProducts,
-        'totalTransactions' => 0,
-        'avgMarginPercent' => $avgMarginPercent
+        'activeProductsCount' => $activeProductsCount,
+        'avgMarginPercent' => $avgMarginPercent,
+        'digiflazzBalance' => $digiflazzBalance
     ]);
 })->middleware('auth');
 
