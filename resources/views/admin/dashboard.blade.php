@@ -25,17 +25,22 @@
             </div>
         @endif
 
-        <!-- Quick Stats Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <!-- Rekapitulasi Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <p class="text-xs text-gray-500 font-bold uppercase">Total Transaksi</p>
+                <h3 class="text-2xl font-black text-gray-800 mt-1">{{ $totalTransactions ?? 0 }}</h3>
+                <p class="text-[11px] text-gray-400 mt-1">Transaksi diproses</p>
+            </div>
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
                 <p class="text-xs text-gray-500 font-bold uppercase">Total Produk</p>
-                <h3 class="text-2xl font-black text-gray-800 mt-1">{{ $totalProducts }}</h3>
+                <h3 class="text-2xl font-black text-blue-600 mt-1">{{ $totalProducts }}</h3>
                 <p class="text-[11px] text-gray-400 mt-1">Tersedia di database</p>
             </div>
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                <p class="text-xs text-gray-500 font-bold uppercase">Keuntungan Per Produk</p>
-                <h3 class="text-2xl font-black text-green-600 mt-1">+Rp 1.500</h3>
-                <p class="text-[11px] text-gray-400 mt-1">Margin otomatis Digiflazz</p>
+                <p class="text-xs text-gray-500 font-bold uppercase">Rata-rata Margin (%)</p>
+                <h3 class="text-2xl font-black text-green-600 mt-1">{{ number_format($avgMarginPercent, 1) }}%</h3>
+                <p class="text-[11px] text-gray-400 mt-1">Markup tetap +Rp 1.500</p>
             </div>
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between">
                 <div>
@@ -51,11 +56,11 @@
             </div>
         </div>
 
-        <!-- Product Table -->
+        <!-- Product Table with Price Comparison & Margin Percentage -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="font-bold text-gray-800 text-base">Katalog Produk PPOB Aktif</h3>
-                <a href="/" target="_blank" class="text-xs text-blue-600 hover:underline font-semibold">Lihat Tampilan Web Utam &rarr;</a>
+                <h3 class="font-bold text-gray-800 text-base">Perbandingan Harga Layanan Digiflazz & Harga Jual</h3>
+                <a href="/" target="_blank" class="text-xs text-blue-600 hover:underline font-semibold">Lihat Tampilan Web Utama &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
@@ -64,24 +69,32 @@
                             <th class="p-3">SKU / Kode</th>
                             <th class="p-3">Nama Produk</th>
                             <th class="p-3">Kategori</th>
-                            <th class="p-3">Brand</th>
-                            <th class="p-3">Harga Modal</th>
-                            <th class="p-3">Harga Jual (+1500)</th>
+                            <th class="p-3">Harga Digiflazz (Modal)</th>
+                            <th class="p-3">Harga Jual Web</th>
+                            <th class="p-3">Selisih Profit</th>
+                            <th class="p-3">Margin (%)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-xs">
                         @forelse($products as $p)
+                            @php
+                                $modal = $p->price_original ?? 0;
+                                $jual = $p->price ?? 0;
+                                $profit = $jual - $modal;
+                                $marginPercent = $modal > 0 ? ($profit / $modal) * 100 : 0;
+                            @endphp
                             <tr class="hover:bg-gray-50">
                                 <td class="p-3 font-mono text-gray-600">{{ $p->code ?? $p->sku ?? '-' }}</td>
                                 <td class="p-3 font-semibold text-gray-800">{{ $p->name }}</td>
                                 <td class="p-3"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-bold text-[10px]">{{ $p->category }}</span></td>
-                                <td class="p-3 text-gray-600">{{ $p->brand }}</td>
-                                <td class="p-3 text-gray-500">Rp {{ number_format($p->price_original ?? 0, 0, ',', '.') }}</td>
-                                <td class="p-3 font-bold text-green-600">Rp {{ number_format($p->price ?? 0, 0, ',', '.') }}</td>
+                                <td class="p-3 text-gray-600 font-semibold">Rp {{ number_format($modal, 0, ',', '.') }}</td>
+                                <td class="p-3 font-bold text-blue-600">Rp {{ number_format($jual, 0, ',', '.') }}</td>
+                                <td class="p-3 font-bold text-green-600">+Rp {{ number_format($profit, 0, ',', '.') }}</td>
+                                <td class="p-3"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-md font-bold text-[10px]">{{ number_format($marginPercent, 1) }}%</span></td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="p-6 text-center text-gray-400">Belum ada data produk di database.</td>
+                                <td colspan="7" class="p-6 text-center text-gray-400">Belum ada data produk di database.</td>
                             </tr>
                         @endforelse
                     </tbody>

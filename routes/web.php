@@ -114,12 +114,26 @@ Route::get('/admin', function () {
         return redirect('/login');
     }
 
-    $products = DB::table('products')->limit(50)->get();
+    $products = DB::table('products')->limit(100)->get();
     $totalProducts = DB::table('products')->count();
+
+    $totalMarginPercent = 0;
+    $validCount = 0;
+    foreach ($products as $p) {
+        $modal = $p->price_original ?? 0;
+        $jual = $p->price ?? 0;
+        if ($modal > 0) {
+            $totalMarginPercent += (($jual - $modal) / $modal) * 100;
+            $validCount++;
+        }
+    }
+    $avgMarginPercent = $validCount > 0 ? ($totalMarginPercent / $validCount) : 0;
 
     return view('admin.dashboard', [
         'products' => $products,
-        'totalProducts' => $totalProducts
+        'totalProducts' => $totalProducts,
+        'totalTransactions' => 0,
+        'avgMarginPercent' => $avgMarginPercent
     ]);
 })->middleware('auth');
 

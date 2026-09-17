@@ -48,13 +48,16 @@
                                 Semua Masa Aktif
                             </button>
                             <button type="button" onclick="setDuration('harian')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="harian">
-                                Harian (1-3 Hari)
+                                Harian (1-6 Hari)
                             </button>
                             <button type="button" onclick="setDuration('mingguan')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="mingguan">
                                 Mingguan (7 Hari)
                             </button>
+                            <button type="button" onclick="setDuration('dwimingguan')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="dwimingguan">
+                                Dwi Mingguan (14-15 Hari)
+                            </button>
                             <button type="button" onclick="setDuration('bulanan')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="bulanan">
-                                Bulanan (30 Hari)
+                                Bulanan (28-30 Hari)
                             </button>
                         </div>
                     </div>
@@ -140,7 +143,6 @@
         function setDuration(duration) {
             selectedDuration = duration;
 
-            // Update UI Button active state
             document.querySelectorAll('.duration-btn').forEach(btn => {
                 if (btn.getAttribute('data-duration') === duration) {
                     btn.className = 'duration-btn bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-600 shadow-sm';
@@ -184,20 +186,22 @@
                 const brand = card.getAttribute('data-brand');
                 const name = card.getAttribute('data-name');
 
-                // Check Operator Match
+                // Match Operator
                 let matchOperator = true;
                 if (detectedProvider) {
                     matchOperator = brand.includes(detectedProvider) || name.includes(detectedProvider);
                 }
 
-                // Check Duration Match
+                // Match Duration
                 let matchDuration = true;
                 if (selectedDuration === 'harian') {
-                    matchDuration = name.includes('1 hari') || name.includes('2 hari') || name.includes('3 hari') || name.includes('hari') && !name.includes('30 hari') && !name.includes('7 hari');
+                    matchDuration = name.includes('1 hari') || name.includes('2 hari') || name.includes('3 hari') || name.includes('4 hari') || name.includes('5 hari') || name.includes('6 hari') || (name.includes('hari') && !name.includes('7 hari') && !name.includes('14 hari') && !name.includes('15 hari') && !name.includes('28 hari') && !name.includes('29 hari') && !name.includes('30 hari'));
                 } else if (selectedDuration === 'mingguan') {
                     matchDuration = name.includes('7 hari') || name.includes('minggu');
+                } else if (selectedDuration === 'dwimingguan') {
+                    matchDuration = name.includes('14 hari') || name.includes('15 hari') || name.includes('2 minggu');
                 } else if (selectedDuration === 'bulanan') {
-                    matchDuration = name.includes('30 hari') || name.includes('bulan') || name.includes('30d');
+                    matchDuration = name.includes('28 hari') || name.includes('29 hari') || name.includes('30 hari') || name.includes('bulan') || name.includes('30d');
                 }
 
                 if (matchOperator && matchDuration) {
