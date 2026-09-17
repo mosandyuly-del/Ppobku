@@ -67,7 +67,7 @@
                 <div class="col-span-full bg-white p-6 rounded-xl text-center text-gray-500 shadow-sm">
                     <p class="font-semibold">Produk {{ $title }} Belum Tersedia</p>
                 </div>
-            @forelse
+            @endforelse
         </div>
     </div>
 
@@ -135,7 +135,6 @@
                     badge.classList.remove('hidden');
                     info.innerText = `Operator terdeteksi: ${detected.toUpperCase()}`;
 
-                    // Filter produk di layar sesuai provider
                     cards.forEach(card => {
                         const brand = card.getAttribute('data-brand');
                         const name = card.getAttribute('data-name');
@@ -150,7 +149,6 @@
                 }
             }
 
-            // Reset jika kurang dari 4 digit atau tidak ditemukan
             badge.classList.add('hidden');
             info.innerText = 'Masukkan nomor HP untuk mendeteksi operator otomatis.';
             cards.forEach(card => card.style.display = 'flex');
