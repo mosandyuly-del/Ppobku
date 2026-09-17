@@ -178,3 +178,8 @@ Route::get('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
+
+// Auto Clear Cache Trigger
+try {
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+} catch (\Exception $e) {}
