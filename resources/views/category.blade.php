@@ -8,6 +8,15 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
+    <!-- Announcement Bar / Teks Berjalan -->
+    <div class="bg-blue-900 text-white text-[11px] py-1.5 px-4 flex justify-between items-center overflow-hidden">
+        <div class="truncate">
+            <span class="bg-blue-600 text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 uppercase">INFO</span>
+            <span>Proses otomatis 1-3 detik | Jam Operasional 24 Jam Nonstop | QRIS All E-Wallet & M-Banking</span>
+        </div>
+        <a href="/cek-pesanan" class="font-bold underline text-[10px] ml-2 shrink-0">Lacak Pesanan &rarr;</a>
+    </div>
+
     <!-- Header / Navbar -->
     <nav class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center max-w-4xl">
@@ -25,29 +34,29 @@
             $isDataCategory = stristr($slug, 'DATA');
             $isGameCategory = stristr($slug, 'GAME');
 
-            // Map Logo Game Populer Digiflazz
             $gameLogos = [
                 'mobile legends' => 'https://img.utdstc.com/icon/4be/3f5/4be3f5c9e2b0efbd6abf722ff41adfb3050c5d26392305374e5bd8cb4948a58a:200',
                 'free fire' => 'https://img.utdstc.com/icon/4e7/b99/4e7b99c0ec9e1d713c2f902a24f0c45969ceeeaaef48950d885a03e1e67e3ad6:200',
                 'pubg' => 'https://img.utdstc.com/icon/4ad/7bd/4ad7bd0dd733d3bd2bb08a1c62fdfbf9b68e9185a53fbcae212fbd65b69f6e5a:200',
                 'genshin' => 'https://img.utdstc.com/icon/6b6/4f3/6b64f3d2f2dfed05e608aa86be342bf23e9ca29f4ff89aef3bf67b8d4fbf2f86:200',
-                'valorant' => 'https://img.utdstc.com/icon/8d9/d9f/8d9d9f5787c95e1c450bf00e57f5c5314ecf1db320d3f8bc9fb1d2fb737df98f:200',
-                'point blank' => 'https://pbs.twimg.com/profile_images/1143438258546196480/vD1u-oX0_400x400.png',
-                'call of duty' => 'https://img.utdstc.com/icon/b1d/625/b1d625c276b5db902b7ecb0a51c4a56a6be17f8a151b147dd2ef8fbbe051cb28:200',
-                'arena of valor' => 'https://img.utdstc.com/icon/c09/78f/c0978fc9e09d5dd2c53f861bf0037eb939c898c61bb6d9dbfef3253b2be03c9e:200'
+                'valorant' => 'https://img.utdstc.com/icon/8d9/d9f/8d9d9f5787c95e1c450bf00e57f5c5314ecf1db320d3f8bc9fb1d2fb737df98f:200'
             ];
 
-            // Filter Daftar Game Unik dari Database
             $uniqueGames = collect();
             if ($isGameCategory && count($products) > 0) {
                 $uniqueGames = $products->pluck('brand')->unique()->filter()->values();
             }
         @endphp
 
-        <!-- Form Input Nomor HP untuk Pulsa / Data -->
+        <!-- Form Input Nomor HP dengan Auto-Detect & Paste Button -->
         @if($isMobileCategory)
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
-                <label class="block text-xs font-bold text-gray-700 mb-1">Nomor Handphone</label>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-xs font-bold text-gray-700">Nomor Handphone</label>
+                    <button type="button" onclick="pastePhoneNumber()" class="text-[11px] text-blue-600 hover:underline font-bold flex items-center">
+                        📋 Tempel / Paste
+                    </button>
+                </div>
                 <div class="relative">
                     <input type="tel" id="phoneNumber" placeholder="Contoh: 081234567890" autocomplete="off"
                         class="w-full pl-3 pr-28 py-3 border border-gray-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -83,7 +92,7 @@
             </div>
         @endif
 
-        <!-- Filter Game Berbasis Logo (Khusus Kategori Games) -->
+        <!-- Filter Logo Game -->
         @if($isGameCategory)
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <label class="block text-xs font-bold text-gray-700 mb-3">Pilih Game Digiflazz</label>
@@ -96,7 +105,7 @@
                     @foreach($uniqueGames as $g)
                         @php
                             $lowerG = strtolower($g);
-                            $logoUrl = 'https://cdn-icons-png.flaticon.com/512/686/686589.png'; // Default Game Controller Icon
+                            $logoUrl = 'https://cdn-icons-png.flaticon.com/512/686/686589.png';
                             foreach($gameLogos as $key => $url) {
                                 if(stristr($lowerG, $key)) {
                                     $logoUrl = $url;
@@ -127,7 +136,10 @@
                      data-name="{{ strtolower($nama) }}">
                     <div>
                         <h3 class="font-bold text-gray-800 text-sm">{{ $nama }}</h3>
-                        <p class="text-xs text-gray-500 uppercase">{{ $item->brand ?? $item->category }}</p>
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <p class="text-xs text-gray-500 uppercase">{{ $item->brand ?? $item->category }}</p>
+                            <span class="text-[9px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded font-bold">Instan 1-3s</span>
+                        </div>
                     </div>
                     <div class="text-right">
                         <span class="text-blue-600 font-bold text-sm block">Rp {{ number_format($harga, 0, ',', '.') }}</span>
@@ -158,7 +170,7 @@
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-gray-700 mb-1">Nomor Tujuan / ID Pelanggan / User ID Game</label>
-                    <input type="text" name="target_no" id="modalTargetNo" required placeholder="Contoh: 12345678 (1234)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" name="target_no" id="modalTargetNo" required placeholder="Contoh: 081234567890 / ID Game" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div class="mb-4">
@@ -189,9 +201,21 @@
             'smartfren': ['0881','0882','0883','0884','0885','0886','0887','0888','0889']
         };
 
+        async function pastePhoneNumber() {
+            try {
+                const text = await navigator.clipboard.readText();
+                const phoneInput = document.getElementById('phoneNumber');
+                if (phoneInput && text) {
+                    phoneInput.value = text.trim();
+                    filterProducts();
+                }
+            } catch (err) {
+                alert('Gagal membaca papan klip. Pastikan izin izin paste diizinkan browser.');
+            }
+        }
+
         function setGame(gameName) {
             selectedGame = gameName.toLowerCase();
-
             document.querySelectorAll('.game-btn').forEach(btn => {
                 if (btn.getAttribute('data-game').toLowerCase() === selectedGame) {
                     btn.className = 'game-btn bg-blue-50 border-2 border-blue-600 p-2 rounded-xl flex flex-col items-center justify-center text-center transition shadow-sm';
@@ -199,13 +223,11 @@
                     btn.className = 'game-btn bg-white border border-gray-200 p-2 rounded-xl flex flex-col items-center justify-center text-center hover:border-blue-500 transition shadow-sm';
                 }
             });
-
             filterProducts();
         }
 
         function setDuration(duration) {
             selectedDuration = duration;
-
             document.querySelectorAll('.duration-btn').forEach(btn => {
                 if (btn.getAttribute('data-duration') === duration) {
                     btn.className = 'duration-btn bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-600 shadow-sm';
@@ -213,7 +235,6 @@
                     btn.className = 'duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100';
                 }
             });
-
             filterProducts();
         }
 
@@ -249,13 +270,11 @@
                 const brand = card.getAttribute('data-brand');
                 const name = card.getAttribute('data-name');
 
-                // Filter Operator
                 let matchOperator = true;
                 if (detectedProvider) {
                     matchOperator = brand.includes(detectedProvider) || name.includes(detectedProvider);
                 }
 
-                // Filter Durasi Paket Data
                 let matchDuration = true;
                 if (selectedDuration === 'harian') {
                     matchDuration = name.includes('1 hari') || name.includes('2 hari') || name.includes('3 hari') || name.includes('4 hari') || name.includes('5 hari') || name.includes('6 hari') || (name.includes('hari') && !name.includes('7 hari') && !name.includes('14 hari') && !name.includes('15 hari') && !name.includes('28 hari') && !name.includes('29 hari') && !name.includes('30 hari'));
@@ -267,7 +286,6 @@
                     matchDuration = name.includes('28 hari') || name.includes('29 hari') || name.includes('30 hari') || name.includes('bulan') || name.includes('30d');
                 }
 
-                // Filter Game
                 let matchGame = true;
                 if (selectedGame !== 'all') {
                     matchGame = brand.includes(selectedGame) || name.includes(selectedGame);
