@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 class SyncDigiflazz extends Command
 {
     protected $signature = 'digiflazz:sync';
-    protected $description = 'Sync product prices from Digiflazz with dynamic markup';
+    protected $description = 'Sync product prices from Digiflazz Prepaid API';
 
     public function handle()
     {

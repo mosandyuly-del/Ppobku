@@ -14,13 +14,34 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Fitur Lacak / Cek Pesanan
+Route::get('/cek-pesanan', function (Request $request) {
+    $search = $request->input('q');
+    $transaction = null;
+
+    if ($search && Schema::hasTable('transactions')) {
+        $transaction = DB::table('transactions')
+            ->where('trx_id', $search)
+            ->orWhere('target_no', $search)
+            ->orderBy('id', 'desc')
+            ->first();
+    }
+
+    return view('track', [
+        'search' => $search,
+        'transaction' => $transaction
+    ]);
+});
+
 // Route Kategori Produk Dinamis
 Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
     if (Schema::hasTable('products')) {
         if (DB::table('products')->count() == 0) {
-            \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+            try {
+                \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+            } catch (\Exception $e) {}
         }
 
         $categoryMap = [
@@ -56,7 +77,7 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
-// Process Checkout & QRIS Generator
+// Process Checkout
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = $request->input('target_no');
@@ -72,6 +93,18 @@ Route::post('/checkout', function (Request $request) {
 
     $trxId = 'TRX-' . time() . rand(100, 999);
     $totalBayar = $product->price ?? 0;
+
+    if (Schema::hasTable('transactions')) {
+        DB::table('transactions')->insert([
+            'trx_id' => $trxId,
+            'product_name' => $product->name ?? 'Produk PPOB',
+            'target_no' => $targetNo,
+            'price' => $totalBayar,
+            'status' => 'PENDING',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+    }
 
     $qrisPayload = "00020101021126570011ID.NOBU.WWW011893600503000008807902150000000000000000303UMI51440014ID.QRIS.WWW0215ID10200212345675204581253033605802ID5913MOSANDY STORE6007JAKARTA63046C41";
 
@@ -108,7 +141,7 @@ $loginHandler = function (Request $request) {
 Route::post('/login', $loginHandler);
 Route::post('/login/perform', $loginHandler)->name('login.perform');
 
-// Route Admin Dashboard Utama
+// Route Admin Dashboard
 Route::get('/admin', function () {
     if (!Auth::check()) {
         return redirect('/login');
@@ -118,7 +151,6 @@ Route::get('/admin', function () {
     $totalProducts = DB::table('products')->count();
     $activeProductsCount = DB::table('products')->where('status', 'active')->count();
 
-    // Hitung Rata-rata Margin Percent
     $totalMarginPercent = 0;
     $validCount = 0;
     foreach ($products as $p) {
@@ -131,7 +163,6 @@ Route::get('/admin', function () {
     }
     $avgMarginPercent = $validCount > 0 ? ($totalMarginPercent / $validCount) : 0;
 
-    // Cek Saldo Real-time ke Digiflazz
     $username = config('services.digiflazz.username', env('DIGIFLAZZ_USERNAME'));
     $apiKey = config('services.digiflazz.key', env('DIGIFLAZZ_KEY'));
     $digiflazzBalance = 0;
@@ -169,17 +200,14 @@ Route::post('/admin/sync-now', function () {
         return redirect('/login');
     }
 
-    \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+    try {
+        \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+    } catch (\Exception $e) {}
 
-    return back()->with('success', 'Berhasil melakukan sinkronisasi ulang data produk Digiflazz!');
+    return back()->with('success', 'Berhasil melakukan sinkronisasi data produk!');
 })->middleware('auth');
 
 Route::get('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
-
-// Auto Clear Cache Trigger
-try {
-    \Illuminate\Support\Facades\Artisan::call('view:clear');
-} catch (\Exception $e) {}
