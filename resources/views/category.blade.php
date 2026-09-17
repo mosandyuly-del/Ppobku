@@ -22,6 +22,7 @@
         @php
             $slug = strtolower($title);
             $isMobileCategory = stristr($slug, 'PULSA') || stristr($slug, 'DATA');
+            $isDataCategory = stristr($slug, 'DATA');
         @endphp
 
         <!-- Form Input Nomor HP dengan Auto-Detect Operator -->
@@ -31,12 +32,33 @@
                 <div class="relative">
                     <input type="tel" id="phoneNumber" placeholder="Contoh: 081234567890" autocomplete="off"
                         class="w-full pl-3 pr-28 py-3 border border-gray-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        oninput="detectOperator()">
+                        oninput="filterProducts()">
                     <div id="operatorBadge" class="absolute right-3 top-2.5 hidden px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg uppercase">
                         -
                     </div>
                 </div>
                 <p id="operatorInfo" class="text-[11px] text-gray-400 mt-1">Masukkan nomor HP untuk mendeteksi operator otomatis.</p>
+                
+                <!-- Filter Pilihan Durasi Khusus Paket Data -->
+                @if($isDataCategory)
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <label class="block text-xs font-bold text-gray-700 mb-2">Masa Aktif / Durasi Paket</label>
+                        <div class="flex flex-wrap gap-2" id="durationFilters">
+                            <button type="button" onclick="setDuration('all')" class="duration-btn bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-600 shadow-sm" data-duration="all">
+                                Semua Masa Aktif
+                            </button>
+                            <button type="button" onclick="setDuration('harian')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="harian">
+                                Harian (1-3 Hari)
+                            </button>
+                            <button type="button" onclick="setDuration('mingguan')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="mingguan">
+                                Mingguan (7 Hari)
+                            </button>
+                            <button type="button" onclick="setDuration('bulanan')" class="duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100" data-duration="bulanan">
+                                Bulanan (30 Hari)
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
         @endif
 
@@ -104,6 +126,8 @@
     </div>
 
     <script>
+        let selectedDuration = 'all';
+
         const operatorPrefixes = {
             'telkomsel': ['0811','0812','0813','0821','0822','0823','0851','0852','0853'],
             'indosat': ['0814','0815','0816','0855','0856','0857','0858'],
@@ -113,45 +137,75 @@
             'smartfren': ['0881','0882','0883','0884','0885','0886','0887','0888','0889']
         };
 
-        function detectOperator() {
-            const input = document.getElementById('phoneNumber').value.trim();
+        function setDuration(duration) {
+            selectedDuration = duration;
+
+            // Update UI Button active state
+            document.querySelectorAll('.duration-btn').forEach(btn => {
+                if (btn.getAttribute('data-duration') === duration) {
+                    btn.className = 'duration-btn bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-600 shadow-sm';
+                } else {
+                    btn.className = 'duration-btn bg-gray-50 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100';
+                }
+            });
+
+            filterProducts();
+        }
+
+        function filterProducts() {
+            const phoneInput = document.getElementById('phoneNumber');
+            const input = phoneInput ? phoneInput.value.trim() : '';
             const badge = document.getElementById('operatorBadge');
             const info = document.getElementById('operatorInfo');
             const cards = document.querySelectorAll('.product-card');
 
+            let detectedProvider = null;
+
             if (input.length >= 4) {
                 const prefix = input.substring(0, 4);
-                let detected = null;
-
                 for (const [provider, prefixes] of Object.entries(operatorPrefixes)) {
                     if (prefixes.includes(prefix)) {
-                        detected = provider;
+                        detectedProvider = provider;
                         break;
                     }
                 }
-
-                if (detected) {
-                    badge.innerText = detected.toUpperCase();
-                    badge.classList.remove('hidden');
-                    info.innerText = `Operator terdeteksi: ${detected.toUpperCase()}`;
-
-                    cards.forEach(card => {
-                        const brand = card.getAttribute('data-brand');
-                        const name = card.getAttribute('data-name');
-
-                        if (brand.includes(detected) || name.includes(detected)) {
-                            card.style.display = 'flex';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                    return;
-                }
             }
 
-            badge.classList.add('hidden');
-            info.innerText = 'Masukkan nomor HP untuk mendeteksi operator otomatis.';
-            cards.forEach(card => card.style.display = 'flex');
+            if (detectedProvider && badge && info) {
+                badge.innerText = detectedProvider.toUpperCase();
+                badge.classList.remove('hidden');
+                info.innerText = `Operator terdeteksi: ${detectedProvider.toUpperCase()}`;
+            } else if (badge && info) {
+                badge.classList.add('hidden');
+                info.innerText = 'Masukkan nomor HP untuk mendeteksi operator otomatis.';
+            }
+
+            cards.forEach(card => {
+                const brand = card.getAttribute('data-brand');
+                const name = card.getAttribute('data-name');
+
+                // Check Operator Match
+                let matchOperator = true;
+                if (detectedProvider) {
+                    matchOperator = brand.includes(detectedProvider) || name.includes(detectedProvider);
+                }
+
+                // Check Duration Match
+                let matchDuration = true;
+                if (selectedDuration === 'harian') {
+                    matchDuration = name.includes('1 hari') || name.includes('2 hari') || name.includes('3 hari') || name.includes('hari') && !name.includes('30 hari') && !name.includes('7 hari');
+                } else if (selectedDuration === 'mingguan') {
+                    matchDuration = name.includes('7 hari') || name.includes('minggu');
+                } else if (selectedDuration === 'bulanan') {
+                    matchDuration = name.includes('30 hari') || name.includes('bulan') || name.includes('30d');
+                }
+
+                if (matchOperator && matchDuration) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         }
 
         function selectProduct(code, name, price) {
