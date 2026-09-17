@@ -23,9 +23,28 @@
             $slug = strtolower($title);
             $isMobileCategory = stristr($slug, 'PULSA') || stristr($slug, 'DATA');
             $isDataCategory = stristr($slug, 'DATA');
+            $isGameCategory = stristr($slug, 'GAME');
+
+            // Map Logo Game Populer Digiflazz
+            $gameLogos = [
+                'mobile legends' => 'https://img.utdstc.com/icon/4be/3f5/4be3f5c9e2b0efbd6abf722ff41adfb3050c5d26392305374e5bd8cb4948a58a:200',
+                'free fire' => 'https://img.utdstc.com/icon/4e7/b99/4e7b99c0ec9e1d713c2f902a24f0c45969ceeeaaef48950d885a03e1e67e3ad6:200',
+                'pubg' => 'https://img.utdstc.com/icon/4ad/7bd/4ad7bd0dd733d3bd2bb08a1c62fdfbf9b68e9185a53fbcae212fbd65b69f6e5a:200',
+                'genshin' => 'https://img.utdstc.com/icon/6b6/4f3/6b64f3d2f2dfed05e608aa86be342bf23e9ca29f4ff89aef3bf67b8d4fbf2f86:200',
+                'valorant' => 'https://img.utdstc.com/icon/8d9/d9f/8d9d9f5787c95e1c450bf00e57f5c5314ecf1db320d3f8bc9fb1d2fb737df98f:200',
+                'point blank' => 'https://pbs.twimg.com/profile_images/1143438258546196480/vD1u-oX0_400x400.png',
+                'call of duty' => 'https://img.utdstc.com/icon/b1d/625/b1d625c276b5db902b7ecb0a51c4a56a6be17f8a151b147dd2ef8fbbe051cb28:200',
+                'arena of valor' => 'https://img.utdstc.com/icon/c09/78f/c0978fc9e09d5dd2c53f861bf0037eb939c898c61bb6d9dbfef3253b2be03c9e:200'
+            ];
+
+            // Filter Daftar Game Unik dari Database
+            $uniqueGames = collect();
+            if ($isGameCategory && count($products) > 0) {
+                $uniqueGames = $products->pluck('brand')->unique()->filter()->values();
+            }
         @endphp
 
-        <!-- Form Input Nomor HP dengan Auto-Detect Operator -->
+        <!-- Form Input Nomor HP untuk Pulsa / Data -->
         @if($isMobileCategory)
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <label class="block text-xs font-bold text-gray-700 mb-1">Nomor Handphone</label>
@@ -39,7 +58,6 @@
                 </div>
                 <p id="operatorInfo" class="text-[11px] text-gray-400 mt-1">Masukkan nomor HP untuk mendeteksi operator otomatis.</p>
                 
-                <!-- Filter Pilihan Durasi Khusus Paket Data -->
                 @if($isDataCategory)
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <label class="block text-xs font-bold text-gray-700 mb-2">Masa Aktif / Durasi Paket</label>
@@ -62,6 +80,36 @@
                         </div>
                     </div>
                 @endif
+            </div>
+        @endif
+
+        <!-- Filter Game Berbasis Logo (Khusus Kategori Games) -->
+        @if($isGameCategory)
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
+                <label class="block text-xs font-bold text-gray-700 mb-3">Pilih Game Digiflazz</label>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3" id="gameFilters">
+                    <button type="button" onclick="setGame('all')" class="game-btn bg-blue-50 border-2 border-blue-600 p-2 rounded-xl flex flex-col items-center justify-center text-center transition shadow-sm" data-game="all">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs mb-1">ALL</div>
+                        <span class="text-[11px] font-bold text-blue-600">Semua Game</span>
+                    </button>
+
+                    @foreach($uniqueGames as $g)
+                        @php
+                            $lowerG = strtolower($g);
+                            $logoUrl = 'https://cdn-icons-png.flaticon.com/512/686/686589.png'; // Default Game Controller Icon
+                            foreach($gameLogos as $key => $url) {
+                                if(stristr($lowerG, $key)) {
+                                    $logoUrl = $url;
+                                    break;
+                                }
+                            }
+                        @endphp
+                        <button type="button" onclick="setGame('{{ addslashes($g) }}')" class="game-btn bg-white border border-gray-200 p-2 rounded-xl flex flex-col items-center justify-center text-center hover:border-blue-500 transition shadow-sm" data-game="{{ $g }}">
+                            <img src="{{ $logoUrl }}" alt="{{ $g }}" class="w-10 h-10 object-cover rounded-lg mb-1">
+                            <span class="text-[10px] font-bold text-gray-700 truncate w-full">{{ $g }}</span>
+                        </button>
+                    @endforeach
+                </div>
             </div>
         @endif
 
@@ -109,8 +157,8 @@
                 <input type="hidden" name="product_code" id="modalProductCode">
 
                 <div class="mb-4">
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Nomor Tujuan / ID Pelanggan</label>
-                    <input type="text" name="target_no" id="modalTargetNo" required placeholder="Contoh: 081234567890" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nomor Tujuan / ID Pelanggan / User ID Game</label>
+                    <input type="text" name="target_no" id="modalTargetNo" required placeholder="Contoh: 12345678 (1234)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div class="mb-4">
@@ -130,6 +178,7 @@
 
     <script>
         let selectedDuration = 'all';
+        let selectedGame = 'all';
 
         const operatorPrefixes = {
             'telkomsel': ['0811','0812','0813','0821','0822','0823','0851','0852','0853'],
@@ -139,6 +188,20 @@
             'tri': ['0895','0896','0897','0898','0899'],
             'smartfren': ['0881','0882','0883','0884','0885','0886','0887','0888','0889']
         };
+
+        function setGame(gameName) {
+            selectedGame = gameName.toLowerCase();
+
+            document.querySelectorAll('.game-btn').forEach(btn => {
+                if (btn.getAttribute('data-game').toLowerCase() === selectedGame) {
+                    btn.className = 'game-btn bg-blue-50 border-2 border-blue-600 p-2 rounded-xl flex flex-col items-center justify-center text-center transition shadow-sm';
+                } else {
+                    btn.className = 'game-btn bg-white border border-gray-200 p-2 rounded-xl flex flex-col items-center justify-center text-center hover:border-blue-500 transition shadow-sm';
+                }
+            });
+
+            filterProducts();
+        }
 
         function setDuration(duration) {
             selectedDuration = duration;
@@ -186,13 +249,13 @@
                 const brand = card.getAttribute('data-brand');
                 const name = card.getAttribute('data-name');
 
-                // Match Operator
+                // Filter Operator
                 let matchOperator = true;
                 if (detectedProvider) {
                     matchOperator = brand.includes(detectedProvider) || name.includes(detectedProvider);
                 }
 
-                // Match Duration
+                // Filter Durasi Paket Data
                 let matchDuration = true;
                 if (selectedDuration === 'harian') {
                     matchDuration = name.includes('1 hari') || name.includes('2 hari') || name.includes('3 hari') || name.includes('4 hari') || name.includes('5 hari') || name.includes('6 hari') || (name.includes('hari') && !name.includes('7 hari') && !name.includes('14 hari') && !name.includes('15 hari') && !name.includes('28 hari') && !name.includes('29 hari') && !name.includes('30 hari'));
@@ -204,7 +267,13 @@
                     matchDuration = name.includes('28 hari') || name.includes('29 hari') || name.includes('30 hari') || name.includes('bulan') || name.includes('30d');
                 }
 
-                if (matchOperator && matchDuration) {
+                // Filter Game
+                let matchGame = true;
+                if (selectedGame !== 'all') {
+                    matchGame = brand.includes(selectedGame) || name.includes(selectedGame);
+                }
+
+                if (matchOperator && matchDuration && matchGame) {
                     card.style.display = 'flex';
                 } else {
                     card.style.display = 'none';
