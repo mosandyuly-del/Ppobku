@@ -6,12 +6,43 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-// Halaman Utama Web
+// Auto Create Table Settings if Not Exists
+if (Schema::hasTable('products') && !Schema::hasTable('settings')) {
+    try {
+        Schema::create('settings', function ($table) {
+            $table->id();
+            $table->string('key')->unique();
+            $table->text('value')->nullable();
+            $table->timestamps();
+        });
+    } catch (\Exception $e) {}
+}
+
+// Helper Function Settings
+function get_setting($key, $default = '') {
+    if (Schema::hasTable('settings')) {
+        $item = DB::table('settings')->where('key', $key)->first();
+        if ($item && !empty($item->value)) {
+            return $item->value;
+        }
+    }
+    return env($key, $default);
+}
+
+function set_setting($key, $value) {
+    if (Schema::hasTable('settings')) {
+        DB::table('settings')->updateOrInsert(
+            ['key' => $key],
+            ['value' => $value, 'updated_at' => now()]
+        );
+    }
+}
+
+// Web Front Routes
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Fitur Lacak / Cek Pesanan
 Route::get('/cek-pesanan', function (Request $request) {
     $search = $request->input('q');
     $transaction = null;
@@ -30,7 +61,6 @@ Route::get('/cek-pesanan', function (Request $request) {
     ]);
 });
 
-// Route Kategori Produk Dinamis
 Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
@@ -75,7 +105,6 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
-// Process Checkout & Simpan Transaksi
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = $request->input('target_no');
@@ -115,11 +144,8 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Route Auth Admin
+// Admin Auth Routes
 Route::get('/login', function () {
-    if (view()->exists('auth.login')) {
-        return view('auth.login');
-    }
     return view('welcome');
 })->name('login');
 
@@ -139,7 +165,7 @@ $loginHandler = function (Request $request) {
 Route::post('/login', $loginHandler);
 Route::post('/login/perform', $loginHandler)->name('login.perform');
 
-// Route Admin Dashboard
+// Admin Dashboard Routes
 Route::get('/admin', function () {
     if (!Auth::check()) {
         return redirect('/login');
@@ -161,8 +187,8 @@ Route::get('/admin', function () {
     }
     $avgMarginPercent = $validCount > 0 ? ($totalMarginPercent / $validCount) : 0;
 
-    $username = config('services.digiflazz.username', env('DIGIFLAZZ_USERNAME'));
-    $apiKey = config('services.digiflazz.key', env('DIGIFLAZZ_KEY'));
+    $username = get_setting('DIGIFLAZZ_USERNAME');
+    $apiKey = get_setting('DIGIFLAZZ_KEY');
     $digiflazzBalance = 0;
 
     if ($username && $apiKey) {
@@ -189,8 +215,28 @@ Route::get('/admin', function () {
         'totalProducts' => $totalProducts,
         'activeProductsCount' => $activeProductsCount,
         'avgMarginPercent' => $avgMarginPercent,
-        'digiflazzBalance' => $digiflazzBalance
+        'digiflazzBalance' => $digiflazzBalance,
+        'digiflazzUsername' => $username,
+        'digiflazzKey' => $apiKey,
+        'markupFlat' => get_setting('MARKUP_FLAT', 1500)
     ]);
+})->middleware('auth');
+
+// Save API Settings Route
+Route::post('/admin/save-settings', function (Request $request) {
+    if (!Auth::check()) {
+        return redirect('/login');
+    }
+
+    set_setting('DIGIFLAZZ_USERNAME', $request->input('DIGIFLAZZ_USERNAME'));
+    set_setting('DIGIFLAZZ_KEY', $request->input('DIGIFLAZZ_KEY'));
+    set_setting('MARKUP_FLAT', $request->input('MARKUP_FLAT'));
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+    } catch (\Exception $e) {}
+
+    return back()->with('success', 'Pengaturan Production API Key & Markup berhasil diperbarui!');
 })->middleware('auth');
 
 Route::post('/admin/sync-now', function () {
