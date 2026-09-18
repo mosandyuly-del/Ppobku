@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-// Auto Create Table Settings if Not Exists
 if (Schema::hasTable('products') && !Schema::hasTable('settings')) {
     try {
         Schema::create('settings', function ($table) {
@@ -18,7 +17,6 @@ if (Schema::hasTable('products') && !Schema::hasTable('settings')) {
     } catch (\Exception $e) {}
 }
 
-// Helper Function Settings
 function get_setting($key, $default = '') {
     if (Schema::hasTable('settings')) {
         $item = DB::table('settings')->where('key', $key)->first();
@@ -38,7 +36,6 @@ function set_setting($key, $value) {
     }
 }
 
-// Web Front Routes
 Route::get('/', function () {
     return view('welcome');
 });
@@ -144,7 +141,6 @@ Route::post('/checkout', function (Request $request) {
     ]);
 });
 
-// Admin Auth Routes
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -164,7 +160,7 @@ $loginHandler = function (Request $request) {
 
 Route::post('/login', $loginHandler);
 
-// Admin Dashboard Routes
+// Admin Dashboard & Analysis Route
 Route::get('/admin', function () {
     if (!Auth::check()) {
         return redirect('/login');
@@ -174,17 +170,27 @@ Route::get('/admin', function () {
     $totalProducts = DB::table('products')->count();
     $activeProductsCount = DB::table('products')->where('status', 'active')->count();
 
-    $totalMarginPercent = 0;
-    $validCount = 0;
-    foreach ($products as $p) {
-        $modal = $p->price_original ?? 0;
-        $jual = $p->price ?? 0;
-        if ($modal > 0) {
-            $totalMarginPercent += (($jual - $modal) / $modal) * 100;
-            $validCount++;
+    // Hitung Rekapitulasi Penjualan dari Tabel Transactions
+    $rekap = [
+        'total_omset' => 0,
+        'total_profit' => 0,
+        'trx_success' => 0,
+        'trx_pending' => 0,
+        'trx_failed' => 0,
+    ];
+
+    if (Schema::hasTable('transactions')) {
+        $successTrx = DB::table('transactions')->where('status', 'SUCCESS')->get();
+        $rekap['trx_success'] = $successTrx->count();
+        $rekap['trx_pending'] = DB::table('transactions')->where('status', 'PENDING')->count();
+        $rekap['trx_failed'] = DB::table('transactions')->whereIn('status', ['FAILED', 'EXPIRED'])->count();
+
+        $markupFlat = (int) get_setting('MARKUP_FLAT', 1500);
+        foreach ($successTrx as $trx) {
+            $rekap['total_omset'] += $trx->price;
+            $rekap['total_profit'] += $markupFlat;
         }
     }
-    $avgMarginPercent = $validCount > 0 ? ($totalMarginPercent / $validCount) : 0;
 
     $username = get_setting('DIGIFLAZZ_USERNAME');
     $apiKey = get_setting('DIGIFLAZZ_KEY');
@@ -213,11 +219,11 @@ Route::get('/admin', function () {
         'products' => $products,
         'totalProducts' => $totalProducts,
         'activeProductsCount' => $activeProductsCount,
-        'avgMarginPercent' => $avgMarginPercent,
         'digiflazzBalance' => $digiflazzBalance,
         'digiflazzUsername' => $username,
         'digiflazzKey' => $apiKey,
-        'markupFlat' => get_setting('MARKUP_FLAT', 1500)
+        'markupFlat' => get_setting('MARKUP_FLAT', 1500),
+        'rekap' => $rekap
     ]);
 })->middleware('auth');
 
