@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembayaran Pembelian - MOSANDY STORE</title>
+    <title>Pembayaran Multi-Channel - MOSANDY STORE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -16,11 +16,11 @@
 
     <div class="max-w-md w-full bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200">
         
-        <!-- Header Pembayaran -->
+        <!-- Header -->
         <div class="text-center mb-6">
-            <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2">Instan Payment 24 Jam</span>
+            <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2">Multichannel Payment 24 Jam</span>
             <h2 class="text-xl font-extrabold text-slate-900">Selesaikan Pembayaran</h2>
-            <p class="text-xs text-slate-400 mt-1">Lakukan pembayaran untuk memproses pesanan otomatis.</p>
+            <p class="text-xs text-slate-400 mt-1">Pilih metode pembayaran sesuai keinginan kamu.</p>
         </div>
 
         <!-- Detail Pesanan -->
@@ -43,13 +43,36 @@
             </div>
         </div>
 
-        <!-- Area Tampilan QRIS Midtrans / Fallback QR -->
+        <!-- Opsi Metode Pembayaran yang Didukung -->
+        <div class="mb-6 space-y-2">
+            <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Metode Pembayaran Tersedia:</p>
+            <div class="grid grid-cols-2 gap-2 text-[10px] font-bold">
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <span>QRIS (DANA/OVO)</span>
+                    <span class="text-emerald-600">✔</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <span>GoPay / ShopeePay</span>
+                    <span class="text-emerald-600">✔</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <span>Virtual Account Bank</span>
+                    <span class="text-emerald-600">✔</span>
+                </div>
+                <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <span>Indomaret / Alfamart</span>
+                    <span class="text-emerald-600">✔</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tombol Pemicu Midtrans Snap -->
         <?php if(!empty($snap_token)): ?>
-            <div class="text-center space-y-4">
+            <div class="text-center space-y-3">
                 <button id="pay-button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/25 transition">
-                    BAYAR SEKARANG VIA QRIS / E-WALLET &rarr;
+                    PILIH METODE PEMBAYARAN &rarr;
                 </button>
-                <p class="text-[10px] text-slate-400">Klik tombol di atas untuk membuka QRIS Midtrans resmi.</p>
+                <p class="text-[10px] text-slate-400">PILIH QRIS, E-WALLET, VA BANK, ATAU MINIMARKET</p>
             </div>
             <script type="text/javascript">
                 const payButton = document.getElementById('pay-button');
@@ -60,21 +83,16 @@
                         onError: function(result){ alert("Pembayaran gagal!"); }
                     });
                 });
-                // Auto Trigger Snap Popup
                 window.onload = function() {
                     payButton.click();
                 };
             </script>
         <?php else: ?>
-            <!-- Fallback QR Standar jika Midtrans Key Belum Dimasukkan -->
             <div class="text-center space-y-4">
                 <div class="bg-white p-4 inline-block rounded-2xl border-2 border-dashed border-blue-200 shadow-sm">
                     <div id="qrcode" class="flex justify-center"></div>
                 </div>
-                <div class="space-y-1">
-                    <p class="text-xs font-bold text-slate-700">Scan QRIS All Payment</p>
-                    <p class="text-[10px] text-slate-400">Gunakan DANA, OVO, GoPay, ShopeePay, atau MBanking.</p>
-                </div>
+                <p class="text-xs font-bold text-slate-700">Scan QRIS All Payment</p>
                 <a href="/cek-pesanan?q=<?php echo $trx_id; ?>" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-2xl text-xs transition">
                     Cek Status Pesanan &rarr;
                 </a>

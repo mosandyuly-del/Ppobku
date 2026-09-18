@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-// Auto Create Tables if Not Exist
 if (!Schema::hasTable('settings')) {
     try {
         Schema::create('settings', function ($table) {
@@ -129,6 +128,7 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
+// Process Checkout & Buat Multichannel Payment Midtrans
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = trim($request->input('target_no'));
@@ -165,12 +165,50 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
+    // Midtrans Configuration - Mengaktifkan Semua Channel Pembayaran
+    $serverKey = get_setting('MIDTRANS_SERVER_KEY');
+    $snapToken = null;
+
+    if ($serverKey) {
+        \Midtrans\Config::$serverKey = $serverKey;
+        \Midtrans\Config::$isProduction = (get_setting('MIDTRANS_MODE') === 'production');
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
+
+        $params = [
+            'transaction_details' => [
+                'order_id' => $trxId,
+                'gross_amount' => $totalBayar,
+            ],
+            'item_details' => [[
+                'id' => $productCode,
+                'price' => $totalBayar,
+                'quantity' => 1,
+                'name' => substr($product->name ?? 'Produk PPOB', 0, 50)
+            ]],
+            'customer_details' => [
+                'first_name' => 'Pelanggan',
+                'phone' => $targetNo,
+            ],
+            // Mengaktifkan QRIS, Virtual Account, E-Wallet, & Mini Market
+            'enabled_payments' => [
+                'gopay', 'qris', 'shopeepay', 
+                'bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'permata_va', 'other_va',
+                'indomaret', 'alfamart'
+            ]
+        ];
+
+        try {
+            $snapToken = \Midtrans\Snap::getSnapToken($params);
+        } catch (\Exception $e) {}
+    }
+
     return view('checkout', [
         'trx_id' => $trxId,
         'product' => $product,
         'target_no' => $targetNo,
         'total' => $totalBayar,
-        'snap_token' => null,
+        'snap_token' => $snapToken,
         'client_key' => get_setting('MIDTRANS_CLIENT_KEY')
     ]);
 });
@@ -194,7 +232,7 @@ $loginHandler = function (Request $request) {
 
 Route::post('/login', $loginHandler);
 
-// Admin Dashboard Route Safe Check
+// Admin Dashboard
 Route::get('/admin', function (Request $request) {
     if (!Auth::check()) {
         return redirect('/login');
