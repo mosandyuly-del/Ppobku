@@ -71,39 +71,41 @@
 
         <!-- Grid Produk -->
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            @forelse($products as$item)
-                @php
-                    $nama =$item->name ?? 'Produk PPOB';
-                    $harga =$item->price ?? 0;
-                    $brand = strtolower($item->brand ?? $item->category ?? 'umum');
-                    $code =$item->code ?? $item->sku ?? $item->id;
-                @endphp
-                <div class="product-card bg-white p-5 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm"
-                     data-brand="{{ $brand }}"
-                     data-name="{{ strtolower($nama) }}">
-                    <div>
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[10px] bg-slate-100 text-slate-600 font-extrabold px-2.5 py-1 rounded-lg uppercase">{{ $item->brand ?? $item->category }}</span>
-                            <span class="text-[9px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-md">Instan 1-3s</span>
-                        </div>
-                        <h3 class="font-bold text-slate-900 text-sm leading-snug mb-4">{{ $nama }}</h3>
-                    </div>
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+            @if(count($products) > 0)
+                @foreach($products as$item)
+                    @php
+                        $nama =$item->name ?? 'Produk PPOB';
+                        $harga =$item->price ?? 0;
+                        $brand = strtolower($item->brand ?? $item->category ?? 'umum');
+                        $code =$item->code ?? $item->sku ?? $item->id;
+                    @endphp
+                    <div class="product-card bg-white p-5 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm"
+                         data-brand="{{ $brand }}"
+                         data-name="{{ strtolower($nama) }}">
                         <div>
-                            <span class="text-[10px] text-slate-400 font-semibold block">Harga Produk</span>
-                            <span class="text-blue-600 font-extrabold text-base">Rp {{ number_format($harga, 0, ',', '.') }}</span>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[10px] bg-slate-100 text-slate-600 font-extrabold px-2.5 py-1 rounded-lg uppercase">{{ $item->brand ?? $item->category }}</span>
+                                <span class="text-[9px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-md">Instan 1-3s</span>
+                            </div>
+                            <h3 class="font-bold text-slate-900 text-sm leading-snug mb-4">{{ $nama }}</h3>
                         </div>
-                        <button onclick="selectProduct('{{ $code }}', '{{ addslashes($nama) }}', '{{$harga }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition">
-                            Beli
-                        </button>
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-slate-400 font-semibold block">Harga Produk</span>
+                                <span class="text-blue-600 font-extrabold text-base">Rp {{ number_format($harga, 0, ',', '.') }}</span>
+                            </div>
+                            <button onclick="selectProduct('{{ $code }}', '{{ addslashes($nama) }}', '{{$harga }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition">
+                                Beli
+                            </button>
+                        </div>
                     </div>
-                </div>
-            @empty
+                @endforeach
+            @else
                 <div class="col-span-full bg-white p-12 rounded-3xl text-center border border-slate-200 shadow-sm">
                     <h3 class="font-bold text-slate-800 text-base">Produk Tidak Ditemukan</h3>
                     <p class="text-xs text-slate-400 mt-1">Belum ada pilihan produk di kategori ini.</p>
                 </div>
-            @endforelse
+            @endif
         </div>
     </main>
 
