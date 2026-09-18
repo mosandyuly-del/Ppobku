@@ -6,9 +6,7 @@
     <title>Layanan {{ $title }} - MOSANDY STORE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased">
 
@@ -69,47 +67,47 @@
             <p id="operatorInfo" class="text-xs text-slate-400 font-medium mt-2">Operator akan terdeteksi otomatis saat 4 digit pertama diketik.</p>
         </div>
 
-        <!-- Grid Produk -->
+        <!-- Grid Produk (Diolah via PHP standar) -->
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            @if(count($products) > 0)
-                @foreach($products as$item)
-                    @php
+            <?php if(isset($products) && count($products) > 0): ?>
+                <?php foreach($products as$item): ?>
+                    <?php
                         $nama =$item->name ?? 'Produk PPOB';
                         $harga =$item->price ?? 0;
                         $brand = strtolower($item->brand ?? $item->category ?? 'umum');
                         $code =$item->code ?? $item->sku ?? $item->id;
-                    @endphp
+                    ?>
                     <div class="product-card bg-white p-5 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm"
-                         data-brand="{{ $brand }}"
-                         data-name="{{ strtolower($nama) }}">
+                         data-brand="<?php echo $brand; ?>"
+                         data-name="<?php echo strtolower($nama); ?>">
                         <div>
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-[10px] bg-slate-100 text-slate-600 font-extrabold px-2.5 py-1 rounded-lg uppercase">{{ $item->brand ?? $item->category }}</span>
+                                <span class="text-[10px] bg-slate-100 text-slate-600 font-extrabold px-2.5 py-1 rounded-lg uppercase"><?php echo $item->brand ?? $item->category; ?></span>
                                 <span class="text-[9px] bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-md">Instan 1-3s</span>
                             </div>
-                            <h3 class="font-bold text-slate-900 text-sm leading-snug mb-4">{{ $nama }}</h3>
+                            <h3 class="font-bold text-slate-900 text-sm leading-snug mb-4"><?php echo $nama; ?></h3>
                         </div>
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
                             <div>
                                 <span class="text-[10px] text-slate-400 font-semibold block">Harga Produk</span>
-                                <span class="text-blue-600 font-extrabold text-base">Rp {{ number_format($harga, 0, ',', '.') }}</span>
+                                <span class="text-blue-600 font-extrabold text-base">Rp <?php echo number_format($harga, 0, ',', '.'); ?></span>
                             </div>
-                            <button onclick="selectProduct('{{ $code }}', '{{ addslashes($nama) }}', '{{$harga }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition">
+                            <button onclick="selectProduct('<?php echo $code; ?>', '<?php echo addslashes($nama); ?>', '<?php echo$harga; ?>')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition">
                                 Beli
                             </button>
                         </div>
                     </div>
-                @endforeach
-            @else
+                <?php endforeach; ?>
+            <?php else: ?>
                 <div class="col-span-full bg-white p-12 rounded-3xl text-center border border-slate-200 shadow-sm">
                     <h3 class="font-bold text-slate-800 text-base">Produk Tidak Ditemukan</h3>
                     <p class="text-xs text-slate-400 mt-1">Belum ada pilihan produk di kategori ini.</p>
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
     </main>
 
-    <!-- Modal Purchase / Pembayaran -->
+    <!-- Modal Purchase -->
     <div id="buyModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
             <button onclick="closeBuyModal()" class="absolute top-5 right-5 text-slate-400 p-1 rounded-full bg-slate-100 text-lg font-bold">&times;</button>
