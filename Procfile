@@ -1,1 +1,1 @@
-web: php artisan view:clear && php artisan config:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+web: php artisan schedule:run --interval=3600 & php artisan serve --host=0.0.0.0 --port=${PORT:-8080}

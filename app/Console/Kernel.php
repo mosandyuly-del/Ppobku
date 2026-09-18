@@ -12,8 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Jalankan sinkronisasi produk Digiflazz otomatis setiap 6 jam sekali
-        $schedule->command('digiflazz:sync')->everySixHours();
+        // Jalankan sinkronisasi harga & produk Digiflazz setiap 1 jam
+        $schedule->command('digiflazz:sync')->hourly();
     }
 
     /**
