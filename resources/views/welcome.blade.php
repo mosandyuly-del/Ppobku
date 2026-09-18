@@ -3,91 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOSANDY STORE - Layanan PPOB & Top Up Game</title>
+    <title>MOSANDY STORE - PPOB & Digital Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
-<body class="bg-gray-100 font-sans">
-
-    <!-- Header / Navbar -->
-    <nav class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wide">MOSANDY STORE</h1>
-            <div>
-                @auth
-                    <a href="/home" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">Dashboard</a>
-                @else
-                    <a href="/login" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">Masuk / Admin</a>
-                @endauth
-            </div>
+<body class="bg-slate-50 text-slate-800 antialiased">
+    <nav class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">MOSANDY STORE</h1>
+            <a href="/admin" class="text-xs bg-blue-700 px-3 py-1.5 rounded-lg font-bold">Admin Panel</a>
         </div>
     </nav>
-
-    <!-- Banner -->
-    <div class="bg-blue-500 text-white text-center py-8 px-4">
-        <h2 class="text-2xl font-bold mb-2">Pusat Isi Ulang & PPOB Terpercaya</h2>
-        <p class="text-sm opacity-90">Transaksi serba cepat, otomatis, dan 24 jam non-stop.</p>
-    </div>
-
-    <!-- Grid Menu Utama -->
-    <div class="container mx-auto px-4 -mt-6">
-        <div class="bg-white rounded-xl shadow-lg p-6 grid grid-cols-3 sm:grid-cols-6 gap-4 text-center">
-            
-            <!-- 1. Top Up Game -->
-            <a href="/category/game" class="flex flex-col items-center group">
-                <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-purple-600 group-hover:text-white transition">
-                    <i class="fa-solid font-gamepad fa-gamepad"></i>
-                </div>
-                <span class="text-xs font-semibold mt-2 text-gray-700">Top Up Game</span>
-            </a>
-
-            <!-- 2. Pulsa -->
-            <a href="/category/pulsa" class="flex flex-col items-center group">
-                <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
-                </div>
-                <span class="text-xs font-semibold mt-2 text-gray-700">Pulsa</span>
-            </a>
-
-            <!-- 3. Paket Data -->
-            <a href="/category/data" class="flex flex-col items-center group">
-                <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-green-600 group-hover:text-white transition">
-                    <i class="fa-solid fa-wifi"></i>
-                </div>
-                <span class="text-xs font-semibold mt-2 text-gray-700">Paket Data</span>
-            </a>
-
-            <!-- 4. Token Listrik -->
-            <a href="/category/pln-token" class="flex flex-col items-center group">
-                <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-yellow-600 group-hover:text-white transition">
-                    <i class="fa-solid fa-bolt"></i>
-                </div>
-                <span class="text-xs font-semibold mt-2 text-gray-700">Token Listrik</span>
-            </a>
-
-            <!-- 5. Tagihan Listrik -->
-            <a href="/category/pln-bill" class="flex flex-col items-center group">
-                <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition">
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                </div>
-                <span class="text-xs font-semibold mt-2 text-gray-700">Tagihan Listrik</span>
-            </a>
-
-            <!-- 6. PDAM -->
-            <a href="/category/pdam" class="flex flex-col items-center group">
-                <div class="w-14 h-14 bg-cyan-100 text-cyan-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-cyan-600 group-hover:text-white transition">
-                    <i class="fa-solid fa-droplet"></i>
-                </div>
-                <span class="text-xs font-semibold mt-2 text-gray-700">PDAM</span>
-            </a>
-
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-6 text-white mb-8 shadow-lg">
+            <h2 class="text-2xl font-extrabold">Selamat Datang di MOSANDY STORE</h2>
+            <p class="text-xs text-blue-100 mt-1">Layanan Top Up Game, Pulsa, & Paket Data Tercepat 24 Jam.</p>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="text-center py-6 text-xs text-gray-500 mt-8">
-        &copy; 2026 MOSANDY STORE. All Rights Reserved.
-    </footer>
-
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <a href="/category/pulsa" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center hover:shadow-md transition">
+                <span class="text-2xl">📱</span>
+                <h3 class="font-bold text-sm mt-2">Pulsa Reguler</h3>
+            </a>
+            <a href="/category/data" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center hover:shadow-md transition">
+                <span class="text-2xl">🌐</span>
+                <h3 class="font-bold text-sm mt-2">Paket Data</h3>
+            </a>
+            <a href="/category/game" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center hover:shadow-md transition">
+                <span class="text-2xl">🎮</span>
+                <h3 class="font-bold text-sm mt-2">Voucher Game</h3>
+            </a>
+        </div>
+    </main>
 </body>
 </html>
