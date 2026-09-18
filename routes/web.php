@@ -6,12 +6,39 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-if (Schema::hasTable('products') && !Schema::hasTable('settings')) {
+// Auto Create Tables if Not Exist
+if (!Schema::hasTable('settings')) {
     try {
         Schema::create('settings', function ($table) {
             $table->id();
             $table->string('key')->unique();
             $table->text('value')->nullable();
+            $table->timestamps();
+        });
+    } catch (\Exception $e) {}
+}
+
+if (!Schema::hasTable('transactions')) {
+    try {
+        Schema::create('transactions', function ($table) {
+            $table->id();
+            $table->string('trx_id')->unique();
+            $table->string('product_name')->nullable();
+            $table->string('product_code')->nullable();
+            $table->string('target_no')->nullable();
+            $table->integer('price')->default(0);
+            $table->string('status')->default('PENDING');
+            $table->timestamps();
+        });
+    } catch (\Exception $e) {}
+}
+
+if (!Schema::hasTable('blacklists')) {
+    try {
+        Schema::create('blacklists', function ($table) {
+            $table->id();
+            $table->string('target_no')->unique();
+            $table->string('reason')->nullable();
             $table->timestamps();
         });
     } catch (\Exception $e) {}
@@ -102,12 +129,10 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
-// Checkout dengan Pengecekan Anti-Spam Blacklist
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = trim($request->input('target_no'));
 
-    // Cek Pengecekan Blacklist
     if (Schema::hasTable('blacklists')) {
         $isBlacklisted = DB::table('blacklists')->where('target_no', $targetNo)->exists();
         if ($isBlacklisted) {
@@ -169,25 +194,35 @@ $loginHandler = function (Request $request) {
 
 Route::post('/login', $loginHandler);
 
-// Dashboard Admin Berfitur Lengkap
+// Admin Dashboard Route Safe Check
 Route::get('/admin', function (Request $request) {
     if (!Auth::check()) {
         return redirect('/login');
     }
 
     $searchTrx = $request->input('search_trx');
-    $trxQuery = DB::table('transactions')->orderBy('id', 'desc');
+    $recentTrx = collect();
 
-    if ($searchTrx) {
-        $trxQuery->where('trx_id', 'LIKE', '%' . $searchTrx . '%')
-                 ->orWhere('target_no', 'LIKE', '%' . $searchTrx . '%');
+    if (Schema::hasTable('transactions')) {
+        $trxQuery = DB::table('transactions')->orderBy('id', 'desc');
+
+        if ($searchTrx) {
+            $trxQuery->where('trx_id', 'LIKE', '%' . $searchTrx . '%')
+                     ->orWhere('target_no', 'LIKE', '%' . $searchTrx . '%');
+        }
+
+        $recentTrx = $trxQuery->limit(50)->get();
     }
 
-    $recentTrx = $trxQuery->limit(50)->get();
+    $products = collect();
+    $totalProducts = 0;
+    $activeProductsCount = 0;
 
-    $products = DB::table('products')->limit(150)->get();
-    $totalProducts = DB::table('products')->count();
-    $activeProductsCount = DB::table('products')->where('status', 'active')->count();
+    if (Schema::hasTable('products')) {
+        $products = DB::table('products')->limit(150)->get();
+        $totalProducts = DB::table('products')->count();
+        $activeProductsCount = DB::table('products')->where('status', 'active')->count();
+    }
 
     $rekap = [
         'total_omset' => 0,
@@ -249,58 +284,59 @@ Route::get('/admin', function (Request $request) {
     ]);
 })->middleware('auth');
 
-// Rute Action Manual Tembak Digiflazz
 Route::post('/admin/retry-digiflazz', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
     $trxId = $request->input('trx_id');
-    $trx = DB::table('transactions')->where('trx_id', $trxId)->first();
+    if (Schema::hasTable('transactions')) {
+        $trx = DB::table('transactions')->where('trx_id', $trxId)->first();
 
-    if ($trx) {
-        $username = get_setting('DIGIFLAZZ_USERNAME');
-        $apiKey = get_setting('DIGIFLAZZ_KEY');
+        if ($trx) {
+            $username = get_setting('DIGIFLAZZ_USERNAME');
+            $apiKey = get_setting('DIGIFLAZZ_KEY');
 
-        if ($username && $apiKey) {
-            $sign = md5($username . $apiKey . $trxId);
-            $payload = [
-                'username' => $username,
-                'buyer_sku_code' => $trx->product_code ?? '',
-                'customer_no' => $trx->target_no ?? '',
-                'ref_id' => $trxId,
-                'sign' => $sign
-            ];
+            if ($username && $apiKey) {
+                $sign = md5($username . $apiKey . $trxId);
+                $payload = [
+                    'username' => $username,
+                    'buyer_sku_code' => $trx->product_code ?? '',
+                    'customer_no' => $trx->target_no ?? '',
+                    'ref_id' => $trxId,
+                    'sign' => $sign
+                ];
 
-            $ch = curl_init('https://api.digiflazz.com/v1/transaction');
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            $res = curl_exec($ch);
-            curl_close($ch);
+                $ch = curl_init('https://api.digiflazz.com/v1/transaction');
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_exec($ch);
+                curl_close($ch);
 
-            DB::table('transactions')->where('trx_id', $trxId)->update(['status' => 'SUCCESS', 'updated_at' => now()]);
-            return back()->with('success', 'Berhasil melakukan tembak ulang ke Digiflazz!');
+                DB::table('transactions')->where('trx_id', $trxId)->update(['status' => 'SUCCESS', 'updated_at' => now()]);
+                return back()->with('success', 'Berhasil melakukan tembak ulang ke Digiflazz!');
+            }
         }
     }
     return back()->with('error', 'Gagal memproses tembak ulang.');
 })->middleware('auth');
 
-// Rute Update Status Manual
 Route::post('/admin/update-status-manual', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
     $trxId = $request->input('trx_id');
     $status = $request->input('status');
 
-    DB::table('transactions')->where('trx_id', $trxId)->update(['status' => $status, 'updated_at' => now()]);
+    if (Schema::hasTable('transactions')) {
+        DB::table('transactions')->where('trx_id', $trxId)->update(['status' => $status, 'updated_at' => now()]);
+    }
     return back()->with('success', 'Status transaksi berhasil diubah secara manual!');
 })->middleware('auth');
 
-// Rute Ekspor Laporan CSV
 Route::get('/admin/export-csv', function () {
     if (!Auth::check()) return redirect('/login');
 
     $fileName = 'rekap_penjualan_' . date('Y-m-d') . '.csv';
-    $transactions = DB::table('transactions')->orderBy('id', 'desc')->get();
+    $transactions = Schema::hasTable('transactions') ? DB::table('transactions')->orderBy('id', 'desc')->get() : collect();
 
     $headers = [
         "Content-type"        => "text/csv",
@@ -323,7 +359,6 @@ Route::get('/admin/export-csv', function () {
     return response()->stream($callback, 200, $headers);
 })->middleware('auth');
 
-// Blacklist Admin
 Route::post('/admin/add-blacklist', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
     $targetNo = trim($request->input('target_no'));
