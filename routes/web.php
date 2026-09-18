@@ -146,7 +146,7 @@ Route::post('/checkout', function (Request $request) {
 
 // Admin Auth Routes
 Route::get('/login', function () {
-    return view('welcome');
+    return view('auth.login');
 })->name('login');
 
 $loginHandler = function (Request $request) {
@@ -163,7 +163,6 @@ $loginHandler = function (Request $request) {
 };
 
 Route::post('/login', $loginHandler);
-Route::post('/login/perform', $loginHandler)->name('login.perform');
 
 // Admin Dashboard Routes
 Route::get('/admin', function () {
@@ -222,7 +221,6 @@ Route::get('/admin', function () {
     ]);
 })->middleware('auth');
 
-// Save API Settings Route
 Route::post('/admin/save-settings', function (Request $request) {
     if (!Auth::check()) {
         return redirect('/login');
