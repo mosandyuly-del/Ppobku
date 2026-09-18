@@ -102,6 +102,7 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
+// Process Checkout & Buat QRIS Midtrans
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = $request->input('target_no');
@@ -116,12 +117,13 @@ Route::post('/checkout', function (Request $request) {
     }
 
     $trxId = 'TRX-' . time() . rand(100, 999);
-    $totalBayar = $product->price ?? 0;
+    $totalBayar = (int) ($product->price ?? 0);
 
     if (Schema::hasTable('transactions')) {
         DB::table('transactions')->insert([
             'trx_id' => $trxId,
             'product_name' => $product->name ?? 'Produk PPOB',
+            'product_code' => $productCode,
             'target_no' => $targetNo,
             'price' => $totalBayar,
             'status' => 'PENDING',
@@ -130,17 +132,120 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
-    $qrisPayload = "00020101021126570011ID.NOBU.WWW011893600503000008807902150000000000000000303UMI51440014ID.QRIS.WWW0215ID10200212345675204581253033605802ID5913MOSANDY STORE6007JAKARTA63046C41";
+    // Konfigurasi Midtrans Snap
+    $serverKey = get_setting('MIDTRANS_SERVER_KEY');
+    $snapToken = null;
+
+    if ($serverKey) {
+        \Midtrans\Config::$serverKey = $serverKey;
+        \Midtrans\Config::$isProduction = (get_setting('MIDTRANS_MODE') === 'production');
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
+
+        $params = [
+            'transaction_details' => [
+                'order_id' => $trxId,
+                'gross_amount' => $totalBayar,
+            ],
+            'item_details' => [[
+                'id' => $productCode,
+                'price' => $totalBayar,
+                'quantity' => 1,
+                'name' => substr($product->name ?? 'Produk PPOB', 0, 50)
+            ]],
+            'customer_details' => [
+                'first_name' => 'Pelanggan',
+                'phone' => $targetNo,
+            ],
+            'enabled_payments' => ['gopay', 'qris', 'shopeepay']
+        ];
+
+        try {
+            $snapToken = \Midtrans\Snap::getSnapToken($params);
+        } catch (\Exception $e) {}
+    }
 
     return view('checkout', [
         'trx_id' => $trxId,
         'product' => $product,
         'target_no' => $targetNo,
         'total' => $totalBayar,
-        'qris_payload' => $qrisPayload
+        'snap_token' => $snapToken,
+        'client_key' => get_setting('MIDTRANS_CLIENT_KEY')
     ]);
 });
 
+// Webhook Callback dari Midtrans
+Route::post('/api/midtrans-callback', function (Request $request) {
+    $serverKey = get_setting('MIDTRANS_SERVER_KEY');
+    
+    if (!$serverKey) {
+        return response()->json(['message' => 'Server Key not configured'], 400);
+    }
+
+    \Midtrans\Config::$serverKey = $serverKey;
+    \Midtrans\Config::$isProduction = (get_setting('MIDTRANS_MODE') === 'production');
+
+    try {
+        $notif = new \Midtrans\Notification();
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Invalid Notification Payload'], 400);
+    }
+
+    $transactionStatus = $notif->transaction_status;
+    $orderId = $notif->order_id;
+    $fraudStatus = $notif->fraud_status;
+
+    $isPaid = false;
+    if ($transactionStatus == 'capture') {
+        if ($fraudStatus == 'accept') $isPaid = true;
+    } else if ($transactionStatus == 'settlement') {
+        $isPaid = true;
+    }
+
+    if ($isPaid) {
+        $trx = DB::table('transactions')->where('trx_id', $orderId)->first();
+
+        if ($trx && $trx->status !== 'SUCCESS') {
+            DB::table('transactions')->where('trx_id', $orderId)->update([
+                'status' => 'SUCCESS',
+                'updated_at' => now()
+            ]);
+
+            // Eksekusi API Digiflazz Otomatis
+            $username = get_setting('DIGIFLAZZ_USERNAME');
+            $apiKey = get_setting('DIGIFLAZZ_KEY');
+
+            if ($username && $apiKey) {
+                $sign = md5($username . $apiKey . $orderId);
+                $payload = [
+                    'username' => $username,
+                    'buyer_sku_code' => $trx->product_code ?? '',
+                    'customer_no' => $trx->target_no ?? '',
+                    'ref_id' => $orderId,
+                    'sign' => $sign
+                ];
+
+                $ch = curl_init('https://api.digiflazz.com/v1/transaction');
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_exec($ch);
+                curl_close($ch);
+            }
+        }
+    } else if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+        DB::table('transactions')->where('trx_id', $orderId)->update([
+            'status' => 'FAILED',
+            'updated_at' => now()
+        ]);
+    }
+
+    return response()->json(['status' => 'OK']);
+});
+
+// Admin Auth & Dashboard Routes
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -160,7 +265,6 @@ $loginHandler = function (Request $request) {
 
 Route::post('/login', $loginHandler);
 
-// Admin Dashboard & Analysis Route
 Route::get('/admin', function () {
     if (!Auth::check()) {
         return redirect('/login');
@@ -170,7 +274,6 @@ Route::get('/admin', function () {
     $totalProducts = DB::table('products')->count();
     $activeProductsCount = DB::table('products')->where('status', 'active')->count();
 
-    // Hitung Rekapitulasi Penjualan dari Tabel Transactions
     $rekap = [
         'total_omset' => 0,
         'total_profit' => 0,
@@ -223,6 +326,9 @@ Route::get('/admin', function () {
         'digiflazzUsername' => $username,
         'digiflazzKey' => $apiKey,
         'markupFlat' => get_setting('MARKUP_FLAT', 1500),
+        'midtransClientKey' => get_setting('MIDTRANS_CLIENT_KEY'),
+        'midtransServerKey' => get_setting('MIDTRANS_SERVER_KEY'),
+        'midtransMode' => get_setting('MIDTRANS_MODE', 'production'),
         'rekap' => $rekap
     ]);
 })->middleware('auth');
@@ -235,12 +341,15 @@ Route::post('/admin/save-settings', function (Request $request) {
     set_setting('DIGIFLAZZ_USERNAME', $request->input('DIGIFLAZZ_USERNAME'));
     set_setting('DIGIFLAZZ_KEY', $request->input('DIGIFLAZZ_KEY'));
     set_setting('MARKUP_FLAT', $request->input('MARKUP_FLAT'));
+    set_setting('MIDTRANS_CLIENT_KEY', $request->input('MIDTRANS_CLIENT_KEY'));
+    set_setting('MIDTRANS_SERVER_KEY', $request->input('MIDTRANS_SERVER_KEY'));
+    set_setting('MIDTRANS_MODE', $request->input('MIDTRANS_MODE'));
 
     try {
         \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
     } catch (\Exception $e) {}
 
-    return back()->with('success', 'Pengaturan Production API Key & Markup berhasil diperbarui!');
+    return back()->with('success', 'Pengaturan Midtrans & Digiflazz berhasil diperbarui!');
 })->middleware('auth');
 
 Route::post('/admin/sync-now', function () {
