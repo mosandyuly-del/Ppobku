@@ -3,89 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembayaran QRIS - MOSANDY STORE</title>
+    <title>Pembayaran Pembelian - MOSANDY STORE</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <?php if(!empty($client_key) && !empty($snap_token)): ?>
+        <script type="text/javascript" src="https://app.midtrans.com/snap/snap.js" data-client-key="<?php echo $client_key; ?>"></script>
+    <?php endif; ?>
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex items-center justify-center p-4">
 
-    <nav class="bg-blue-600 text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center max-w-md">
-            <span class="font-bold text-lg">MOSANDY STORE</span>
-            <a href="/" class="text-xs bg-white text-blue-600 px-3 py-1.5 rounded-lg font-bold">&larr; Batal</a>
+    <div class="max-w-md w-full bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200">
+        
+        <!-- Header Pembayaran -->
+        <div class="text-center mb-6">
+            <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2">Instan Payment 24 Jam</span>
+            <h2 class="text-xl font-extrabold text-slate-900">Selesaikan Pembayaran</h2>
+            <p class="text-xs text-slate-400 mt-1">Lakukan pembayaran untuk memproses pesanan otomatis.</p>
         </div>
-    </nav>
 
-    <div class="container mx-auto px-4 py-6 max-w-md">
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 text-center">
-            
-            <!-- Countdown Timer -->
-            <div class="bg-red-50 text-red-700 p-2.5 rounded-xl text-xs font-bold mb-4 flex justify-between items-center">
-                <span>Batas Waktu Pembayaran:</span>
-                <span id="qrisTimer" class="text-sm font-mono font-black text-red-600">15:00</span>
+        <!-- Detail Pesanan -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 mb-6 text-xs">
+            <div class="flex justify-between items-center">
+                <span class="text-slate-500 font-semibold">ID Transaksi:</span>
+                <span class="font-mono font-bold text-slate-900"><?php echo $trx_id; ?></span>
             </div>
-
-            <p class="text-xs text-gray-500 font-bold uppercase">Kode Transaksi</p>
-            <h3 class="text-base font-mono font-bold text-gray-800 mb-3">{{ $trx_id }}</h3>
-
-            <div class="bg-gray-50 p-4 rounded-xl mb-4 text-left text-xs border border-gray-100">
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-500">Produk:</span>
-                    <span class="font-bold text-gray-800">{{ $product->name ?? 'Produk PPOB' }}</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-500">Nomor Tujuan:</span>
-                    <span class="font-bold text-gray-800">{{ $target_no }}</span>
-                </div>
-                <div class="flex justify-between py-1 border-t border-gray-200 mt-1 pt-1">
-                    <span class="text-gray-500">Total Bayar:</span>
-                    <span class="font-black text-blue-600 text-sm">Rp {{ number_format($total, 0, ',', '.') }}</span>
-                </div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-500 font-semibold">Produk:</span>
+                <span class="font-bold text-slate-900 text-right truncate max-w-[200px]"><?php echo $product->name ?? 'Produk PPOB'; ?></span>
             </div>
-
-            <!-- Tampilan QR Code -->
-            <div class="my-4 flex justify-center">
-                <div id="qrcode" class="p-3 bg-white border-2 border-dashed border-gray-300 rounded-2xl shadow-inner"></div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-500 font-semibold">Nomor Tujuan:</span>
+                <span class="font-mono font-bold text-blue-600"><?php echo $target_no; ?></span>
             </div>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                <span class="text-slate-700 font-extrabold uppercase">Total Tagihan:</span>
+                <span class="text-base font-black text-emerald-600">Rp <?php echo number_format($total, 0, ',', '.'); ?></span>
+            </div>
+        </div>
 
-            <p class="text-xs text-gray-500 mb-4">Scan kode QRIS di atas menggunakan GoPay, OVO, Dana, ShopeePay, LinkAja, BCA, Mandiri, atau aplikasi m-Banking Anda.</p>
-
-            <div class="space-y-2">
-                <a href="/cek-pesanan?q={{ $trx_id }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">
-                    Cek Status Pembayaran
+        <!-- Area Tampilan QRIS Midtrans / Fallback QR -->
+        <?php if(!empty($snap_token)): ?>
+            <div class="text-center space-y-4">
+                <button id="pay-button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/25 transition">
+                    BAYAR SEKARANG VIA QRIS / E-WALLET &rarr;
+                </button>
+                <p class="text-[10px] text-slate-400">Klik tombol di atas untuk membuka QRIS Midtrans resmi.</p>
+            </div>
+            <script type="text/javascript">
+                const payButton = document.getElementById('pay-button');
+                payButton.addEventListener('click', function () {
+                    snap.pay('<?php echo $snap_token; ?>', {
+                        onSuccess: function(result){ window.location.href = "/cek-pesanan?q=<?php echo $trx_id; ?>"; },
+                        onPending: function(result){ window.location.href = "/cek-pesanan?q=<?php echo $trx_id; ?>"; },
+                        onError: function(result){ alert("Pembayaran gagal!"); }
+                    });
+                });
+                // Auto Trigger Snap Popup
+                window.onload = function() {
+                    payButton.click();
+                };
+            </script>
+        <?php else: ?>
+            <!-- Fallback QR Standar jika Midtrans Key Belum Dimasukkan -->
+            <div class="text-center space-y-4">
+                <div class="bg-white p-4 inline-block rounded-2xl border-2 border-dashed border-blue-200 shadow-sm">
+                    <div id="qrcode" class="flex justify-center"></div>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-700">Scan QRIS All Payment</p>
+                    <p class="text-[10px] text-slate-400">Gunakan DANA, OVO, GoPay, ShopeePay, atau MBanking.</p>
+                </div>
+                <a href="/cek-pesanan?q=<?php echo $trx_id; ?>" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-2xl text-xs transition">
+                    Cek Status Pesanan &rarr;
                 </a>
-                <a href="https://wa.me/6281234567890?text=Halo%20Admin,%20saya%20sudah%20bayar%20untuk%20TRX:%20{{ $trx_id }}%20Target:%20{{ $target_no }}" target="_blank" class="block w-full bg-green-50 text-green-700 hover:bg-green-100 font-bold py-2.5 rounded-xl text-xs border border-green-300 transition">
-                    💬 Ada Kendala? Chat CS WhatsApp
-                </a>
             </div>
+            <script type="text/javascript">
+                const defaultPayload = "00020101021126570011ID.NOBU.WWW011893600503000008807902150000000000000000303UMI51440014ID.QRIS.WWW0215ID10200212345675204581253033605802ID5913MOSANDY STORE6007JAKARTA63046C41";
+                new QRCode(document.getElementById("qrcode"), {
+                    text: defaultPayload,
+                    width: 180,
+                    height: 180
+                });
+            </script>
+        <?php endif; ?>
+
+        <div class="mt-6 text-center">
+            <a href="/" class="text-xs font-bold text-slate-400 hover:text-slate-600">&larr; Batalkan & Kembali</a>
         </div>
     </div>
 
-    <script>
-        // Generate Kode QRIS
-        const qrisData = "{{ $qris_payload }}";
-        const qr = qrcode(0, 'M');
-        qr.addData(qrisData);
-        qr.make();
-        document.getElementById('qrcode').innerHTML = qr.createImgTag(5);
-
-        // Timer 15 Menit
-        let timeLeft = 15 * 60;
-        const timerElem = document.getElementById('qrisTimer');
-
-        const countdown = setInterval(() => {
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
-            seconds = seconds < 10 ? '0' + seconds : seconds;
-            timerElem.innerText = `${minutes}:${seconds}`;
-
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerElem.innerText = "KADALUARSA";
-                alert('Batas waktu pembayaran QRIS telah habis. Silakan lakukan order ulang.');
-            }
-            timeLeft--;
-        }, 1000);
-    </script>
 </body>
 </html>
