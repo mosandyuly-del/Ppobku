@@ -13,7 +13,6 @@ class DigiflazzSync extends Command
 
     public function handle()
     {
-        // Ambil credential dari tabel settings atau env
         function get_config($key) {
             if (Schema::hasTable('settings')) {
                 $item = DB::table('settings')->where('key', $key)->first();
@@ -25,14 +24,14 @@ class DigiflazzSync extends Command
         $username = get_config('DIGIFLAZZ_USERNAME');
         $apiKey = get_config('DIGIFLAZZ_KEY');
         $markupFlat = (int) get_config('MARKUP_FLAT');
-        if ($markupFlat <= 0) $markupFlat = 1500; // Default markup Rp 1.500
+        if ($markupFlat <= 0) $markupFlat = 1500;
 
         if (empty($username) || empty($apiKey)) {
             $this->error('Digiflazz Username or Key is missing.');
             return;
         }
 
-        // Generate MD5 Sign
+        // Generate Sign MD5
         $sign = md5($username . $apiKey . 'pricelist');
         
         $payload = [
@@ -41,7 +40,6 @@ class DigiflazzSync extends Command
             'sign' => $sign
         ];
 
-        // Hit API Digiflazz
         $ch = curl_init('https://api.digiflazz.com/v1/price-list');
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
@@ -77,32 +75,36 @@ class DigiflazzSync extends Command
         $successCount = 0;
 
         foreach ($resData['data'] as $item) {
-            // Hanya simpan produk yang normal/aktif di Digiflazz
-            if ($item['seller_product_status'] == true && $item['buyer_product_status'] == true) {
+            // Pengecekan keamanan: pastikan $item adalah array dan memiliki key sku
+            if (is_array($item) && isset($item['buyer_sku_code'])) {
                 
-                $originalPrice = (int) $item['price'];
-                $sellPrice = $originalPrice + $markupFlat;
+                $sellerStatus = isset($item['seller_product_status']) ? $item['seller_product_status'] : false;
+                $buyerStatus = isset($item['buyer_product_status']) ? $item['buyer_product_status'] : false;
 
-                DB::table('products')->updateOrInsert(
-                    ['code' => $item['buyer_sku_code']],
-                    [
-                        'name' => $item['product_name'],
-                        'sku' => $item['buyer_sku_code'],
-                        'price' => $sellPrice,
-                        'original_price' => $originalPrice,
-                        'status' => 'active',
-                        'category' => strtolower($item['category']),
-                        'brand' => strtolower($item['brand']),
-                        'description' => $item['desc'] ?? '',
-                        'updated_at' => now()
-                    ]
-                );
-                $successCount++;
-            } else {
-                // Jika produk sedang gangguan/ditutup dari Digiflazz, ubah status di web kita jadi nonaktif
-                DB::table('products')
-                    ->where('code', $item['buyer_sku_code'])
-                    ->update(['status' => 'inactive', 'updated_at' => now()]);
+                if ($sellerStatus == true && $buyerStatus == true) {
+                    $originalPrice = (int) ($item['price'] ?? 0);
+                    $sellPrice = $originalPrice + $markupFlat;
+
+                    DB::table('products')->updateOrInsert(
+                        ['code' => $item['buyer_sku_code']],
+                        [
+                            'name' => $item['product_name'] ?? 'Produk PPOB',
+                            'sku' => $item['buyer_sku_code'],
+                            'price' => $sellPrice,
+                            'original_price' => $originalPrice,
+                            'status' => 'active',
+                            'category' => strtolower($item['category'] ?? 'umum'),
+                            'brand' => strtolower($item['brand'] ?? 'umum'),
+                            'description' => $item['desc'] ?? '',
+                            'updated_at' => now()
+                        ]
+                    );
+                    $successCount++;
+                } else {
+                    DB::table('products')
+                        ->where('code', $item['buyer_sku_code'])
+                        ->update(['status' => 'inactive', 'updated_at' => now()]);
+                }
             }
         }
 
