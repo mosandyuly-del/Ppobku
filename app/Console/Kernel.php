@@ -7,18 +7,12 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
     protected function schedule(Schedule $schedule): void
     {
-        // Jalankan sinkronisasi harga & produk Digiflazz setiap 1 jam
-        $schedule->command('digiflazz:sync')->hourly();
+        // Otomatis sync produk Digiflazz setiap hari jam 00:00
+        $schedule->command('digiflazz:sync')->daily();
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
