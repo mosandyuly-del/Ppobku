@@ -27,11 +27,10 @@ class DigiflazzSync extends Command
         if ($markupFlat <= 0) $markupFlat = 1500;
 
         if (empty($username) || empty($apiKey)) {
-            $this->error('Digiflazz Username or Key is missing.');
+            $this->error('Digiflazz Username atau API Key belum diisi di Admin Panel.');
             return;
         }
 
-        // Generate Sign MD5
         $sign = md5($username . $apiKey . 'pricelist');
         
         $payload = [
@@ -50,12 +49,17 @@ class DigiflazzSync extends Command
 
         $resData = json_decode($response, true);
 
-        if (!isset($resData['data']) || !is_array($resData['data'])) {
-            $this->error('Gagal mengambil data dari API Digiflazz.');
+        // Jika API Digiflazz Mengembalikan Error / Unauthorized
+        if (isset($resData['data']['message'])) {
+            $this->error('Digiflazz API Response: ' . $resData['data']['message']);
             return;
         }
 
-        // Buat tabel products jika belum ada
+        if (!isset($resData['data']) || !is_array($resData['data'])) {
+            $this->error('Gagal terhubung ke API Digiflazz.');
+            return;
+        }
+
         if (!Schema::hasTable('products')) {
             Schema::create('products', function ($table) {
                 $table->id();
@@ -75,11 +79,9 @@ class DigiflazzSync extends Command
         $successCount = 0;
 
         foreach ($resData['data'] as $item) {
-            // Pengecekan keamanan: pastikan $item adalah array dan memiliki key sku
             if (is_array($item) && isset($item['buyer_sku_code'])) {
-                
-                $sellerStatus = isset($item['seller_product_status']) ? $item['seller_product_status'] : false;
-                $buyerStatus = isset($item['buyer_product_status']) ? $item['buyer_product_status'] : false;
+                $sellerStatus = $item['seller_product_status'] ?? false;
+                $buyerStatus = $item['buyer_product_status'] ?? false;
 
                 if ($sellerStatus == true && $buyerStatus == true) {
                     $originalPrice = (int) ($item['price'] ?? 0);
@@ -100,10 +102,6 @@ class DigiflazzSync extends Command
                         ]
                     );
                     $successCount++;
-                } else {
-                    DB::table('products')
-                        ->where('code', $item['buyer_sku_code'])
-                        ->update(['status' => 'inactive', 'updated_at' => now()]);
                 }
             }
         }
