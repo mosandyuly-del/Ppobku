@@ -39,7 +39,7 @@
         <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-500/20">
             <span class="text-[10px] font-black uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full">Katalog Digital</span>
             <h2 class="text-2xl font-black mt-2">{{ $title }}</h2>
-            <p class="text-xs text-blue-100 mt-1">Masukkan nomor HP tujuan terlebih dahulu untuk mendeteksi operator otomatis.</p>
+            <p class="text-xs text-blue-100 mt-1">Masukkan nomor HP tujuan terlebih dahulu untuk menampilkan pilihan produk.</p>
         </div>
 
         <!-- Input Nomor HP Utama untuk Auto Detection -->
@@ -52,7 +52,7 @@
                     <span id="operator_name" class="text-[10px] font-black uppercase px-3 py-1 rounded-full bg-blue-100 text-blue-700">TELKOMSEL</span>
                 </div>
             </div>
-            <p id="phone_hint" class="text-[11px] font-semibold text-slate-400">Ketik minimal 4 digit nomor HP (misal: 0812, 0857, 0818, 0896) untuk melihat pilihan produk.</p>
+            <p id="phone_hint" class="text-[11px] font-semibold text-slate-400">Ketik minimal 4 digit nomor HP untuk memuat daftar produk.</p>
         </div>
 
         <!-- Container Tempat Produk Muncul Setelah Nomor Diisi -->
@@ -62,12 +62,12 @@
             <div id="empty_state" class="bg-white p-8 rounded-3xl border border-dashed border-slate-300 text-center space-y-2">
                 <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto text-blue-600 font-bold text-xl">📱</div>
                 <h3 class="font-extrabold text-slate-800 text-sm">Nomor HP Belum Diisi</h3>
-                <p class="text-xs text-slate-400 max-w-xs mx-auto">Silakan ketik nomor ponsel kamu di kolom atas. Produk akan otomatis ditampilkan sesuai operator nomor kamu.</p>
+                <p class="text-xs text-slate-400 max-w-xs mx-auto">Silakan ketik nomor ponsel kamu di kolom atas. Produk akan otomatis ditampilkan.</p>
             </div>
 
-            <!-- Daftar Produk (Hidden Secara Default) -->
+            <!-- Daftar Produk -->
             <div id="product_grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden">
-                @foreach($products as $p)
+                @forelse($products as $p)
                     @php
                         $brandLower = strtolower($p->brand ?? '');
                         $nameLower = strtolower($p->name ?? '');
@@ -90,12 +90,11 @@
                             Beli Sekarang &rarr;
                         </button>
                     </div>
-                @endforeach
-            </div>
-
-            <!-- State Produk Tidak Ditemukan -->
-            <div id="no_match_state" class="bg-white p-8 rounded-3xl border border-slate-200 text-center hidden">
-                <p class="text-xs font-bold text-slate-500">Tidak ada produk yang cocok untuk provider nomor tersebut.</p>
+                @empty
+                    <div class="col-span-full bg-white p-8 rounded-3xl border border-slate-200 text-center">
+                        <p class="text-xs text-slate-400 font-bold">Produk belum tersinkronisasi. Silakan klik "Sync Produk Digiflazz" di Admin Panel.</p>
+                    </div>
+                @endforelse
             </div>
 
         </div>
@@ -129,7 +128,7 @@
                 <div>
                     <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Metode Pembayaran</label>
                     <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs font-bold text-slate-800">
-                        <span>QRIS & Multi Payment 24 Jam</span>
+                        <span>QRIS DANA (Manual WA)</span>
                         <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded">OTOMATIS</span>
                     </div>
                 </div>
@@ -142,7 +141,7 @@
         </div>
     </div>
 
-    <!-- Script Auto Detection Provider -->
+    <!-- Script Auto Filter Provider -->
     <script type="text/javascript">
         const prefixMap = {
             'telkomsel': ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'],
@@ -156,7 +155,6 @@
         const phoneInput = document.getElementById('input_phone');
         const emptyState = document.getElementById('empty_state');
         const productGrid = document.getElementById('product_grid');
-        const noMatchState = document.getElementById('no_match_state');
         const operatorBadge = document.getElementById('operator_badge');
         const operatorName = document.getElementById('operator_name');
         const productCards = document.querySelectorAll('.product-card');
@@ -168,7 +166,6 @@
             if (phone.length < 4) {
                 emptyState.classList.remove('hidden');
                 productGrid.classList.add('hidden');
-                noMatchState.classList.add('hidden');
                 operatorBadge.classList.add('hidden');
                 return;
             }
@@ -184,46 +181,37 @@
             }
 
             emptyState.classList.add('hidden');
+            productGrid.classList.remove('hidden');
 
             if (detectedProvider) {
                 operatorBadge.classList.remove('hidden');
                 operatorName.innerText = detectedProvider.toUpperCase();
 
-                let visibleCount = 0;
+                let matchCount = 0;
                 productCards.forEach(card => {
                     let fulltext = card.getAttribute('data-fulltext');
-                    // Jika provider xl atau axis, tampilkan produk xl & axis
                     let isMatch = fulltext.includes(detectedProvider);
+
                     if ((detectedProvider === 'xl' || detectedProvider === 'axis') && (fulltext.includes('xl') || fulltext.includes('axis'))) {
                         isMatch = true;
                     }
 
                     if (isMatch) {
                         card.classList.remove('hidden');
-                        visibleCount++;
+                        matchCount++;
                     } else {
                         card.classList.add('hidden');
                     }
                 });
 
-                if (visibleCount > 0) {
-                    productGrid.classList.remove('hidden');
-                    noMatchState.classList.add('hidden');
-                } else {
-                    // Fallback jika nama brand tidak persis, tampilkan semua produk
+                // Jika tidak ada produk spesifik provider yang cocok, tampilkan semua produk
+                if (matchCount === 0) {
                     productCards.forEach(card => card.classList.remove('hidden'));
-                    productGrid.classList.remove('hidden');
-                    noMatchState.classList.add('hidden');
                 }
-
             } else {
                 operatorBadge.classList.remove('hidden');
-                operatorName.innerText = 'UMUM / LAINNYA';
-                
-                // Tampilkan semua produk jika prefix tidak dikenali
+                operatorName.innerText = 'PROMO / UMUM';
                 productCards.forEach(card => card.classList.remove('hidden'));
-                productGrid.classList.remove('hidden');
-                noMatchState.classList.add('hidden');
             }
         });
 
