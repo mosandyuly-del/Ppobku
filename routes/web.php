@@ -44,6 +44,87 @@ if (!Schema::hasTable('blacklists')) {
     } catch (\Exception $e) {}
 }
 
+function seed_default_products() {
+    if (!Schema::hasTable('products')) {
+        Schema::create('products', function ($table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->string('code')->unique();
+            $table->string('sku')->nullable();
+            $table->integer('price')->default(0);
+            $table->integer('original_price')->default(0);
+            $table->string('status')->default('active');
+            $table->string('category')->nullable();
+            $table->string('brand')->nullable();
+            $table->text('description')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    $products = [
+        // PULSA
+        ['code' => 'S1', 'name' => 'Telkomsel Pulsa 1.000', 'price' => 2800, 'brand' => 'telkomsel', 'category' => 'pulsa'],
+        ['code' => 'S5', 'name' => 'Telkomsel Pulsa 5.000', 'price' => 6700, 'brand' => 'telkomsel', 'category' => 'pulsa'],
+        ['code' => 'S10', 'name' => 'Telkomsel Pulsa 10.000', 'price' => 11700, 'brand' => 'telkomsel', 'category' => 'pulsa'],
+        ['code' => 'S20', 'name' => 'Telkomsel Pulsa 20.000', 'price' => 21500, 'brand' => 'telkomsel', 'category' => 'pulsa'],
+        ['code' => 'S50', 'name' => 'Telkomsel Pulsa 50.000', 'price' => 51200, 'brand' => 'telkomsel', 'category' => 'pulsa'],
+        ['code' => 'S100', 'name' => 'Telkomsel Pulsa 100.000', 'price' => 100500, 'brand' => 'telkomsel', 'category' => 'pulsa'],
+
+        ['code' => 'I5', 'name' => 'Indosat Pulsa 5.000', 'price' => 6600, 'brand' => 'indosat', 'category' => 'pulsa'],
+        ['code' => 'I10', 'name' => 'Indosat Pulsa 10.000', 'price' => 11600, 'brand' => 'indosat', 'category' => 'pulsa'],
+        ['code' => 'I25', 'name' => 'Indosat Pulsa 25.000', 'price' => 26100, 'brand' => 'indosat', 'category' => 'pulsa'],
+        ['code' => 'I50', 'name' => 'Indosat Pulsa 50.000', 'price' => 50800, 'brand' => 'indosat', 'category' => 'pulsa'],
+
+        ['code' => 'X5', 'name' => 'XL Pulsa 5.000', 'price' => 6700, 'brand' => 'xl', 'category' => 'pulsa'],
+        ['code' => 'X10', 'name' => 'XL Pulsa 10.000', 'price' => 11700, 'brand' => 'xl', 'category' => 'pulsa'],
+        ['code' => 'X25', 'name' => 'XL Pulsa 25.000', 'price' => 26000, 'brand' => 'xl', 'category' => 'pulsa'],
+        ['code' => 'X50', 'name' => 'XL Pulsa 50.000', 'price' => 50700, 'brand' => 'xl', 'category' => 'pulsa'],
+
+        ['code' => 'AX5', 'name' => 'Axis Pulsa 5.000', 'price' => 6650, 'brand' => 'axis', 'category' => 'pulsa'],
+        ['code' => 'AX10', 'name' => 'Axis Pulsa 10.000', 'price' => 11650, 'brand' => 'axis', 'category' => 'pulsa'],
+        ['code' => 'AX25', 'name' => 'Axis Pulsa 25.000', 'price' => 25900, 'brand' => 'axis', 'category' => 'pulsa'],
+
+        ['code' => 'T5', 'name' => 'Tri Pulsa 5.000', 'price' => 6200, 'brand' => 'tri', 'category' => 'pulsa'],
+        ['code' => 'T10', 'name' => 'Tri Pulsa 10.000', 'price' => 11200, 'brand' => 'tri', 'category' => 'pulsa'],
+        ['code' => 'T25', 'name' => 'Tri Pulsa 25.000', 'price' => 25800, 'brand' => 'tri', 'category' => 'pulsa'],
+
+        // PAKET DATA
+        ['code' => 'SD1', 'name' => 'Telkomsel Data OMG 1 GB 3 Hari', 'price' => 14500, 'brand' => 'telkomsel', 'category' => 'data'],
+        ['code' => 'SD2', 'name' => 'Telkomsel Data OMG 2 GB 7 Hari', 'price' => 22000, 'brand' => 'telkomsel', 'category' => 'data'],
+        ['code' => 'SD5', 'name' => 'Telkomsel Data Combo 5 GB 30 Hari', 'price' => 45000, 'brand' => 'telkomsel', 'category' => 'data'],
+
+        ['code' => 'ID1', 'name' => 'Indosat Freedom Internet 1 GB 5 Hari', 'price' => 10500, 'brand' => 'indosat', 'category' => 'data'],
+        ['code' => 'ID3', 'name' => 'Indosat Freedom Internet 3 GB 30 Hari', 'price' => 25000, 'brand' => 'indosat', 'category' => 'data'],
+        ['code' => 'ID7', 'name' => 'Indosat Freedom Internet 7 GB 30 Hari', 'price' => 38000, 'brand' => 'indosat', 'category' => 'data'],
+
+        ['code' => 'XD1', 'name' => 'XL Data Xtra Combo Flex 1.5 GB 30 Hari', 'price' => 18500, 'brand' => 'xl', 'category' => 'data'],
+        ['code' => 'XD4', 'name' => 'XL Data Xtra Combo Flex 4 GB 30 Hari', 'price' => 34000, 'brand' => 'xl', 'category' => 'data'],
+
+        ['code' => 'AXD2', 'name' => 'Axis Data Bronet 2.5 GB 5 Hari', 'price' => 15160, 'brand' => 'axis', 'category' => 'data'],
+        ['code' => 'AXD5', 'name' => 'Axis Data Bronet 5 GB 30 Hari', 'price' => 31000, 'brand' => 'axis', 'category' => 'data'],
+
+        ['code' => 'TD1', 'name' => 'Tri Data Happy 1 GB 5 Hari', 'price' => 9500, 'brand' => 'tri', 'category' => 'data'],
+        ['code' => 'TD3', 'name' => 'Tri Data Happy 3 GB 30 Hari', 'price' => 21000, 'brand' => 'tri', 'category' => 'data'],
+    ];
+
+    foreach ($products as $p) {
+        DB::table('products')->updateOrInsert(
+            ['code' => $p['code']],
+            [
+                'name' => $p['name'],
+                'sku' => $p['code'],
+                'price' => $p['price'],
+                'original_price' => $p['price'] - 1500,
+                'status' => 'active',
+                'category' => $p['category'],
+                'brand' => $p['brand'],
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+    }
+}
+
 function get_setting($key, $default = '') {
     if (Schema::hasTable('settings')) {
         $item = DB::table('settings')->where('key', $key)->first();
@@ -88,14 +169,13 @@ Route::get('/cek-pesanan', function (Request $request) {
 Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
-    if (Schema::hasTable('products')) {
-        // Jika database produk kosong, panggil seeder secara otomatis
-        if (DB::table('products')->count() == 0) {
-            try {
-                (new \Database\Seeders\ProductSeeder())->run();
-            } catch (\Exception $e) {}
-        }
+    if (!Schema::hasTable('products') || DB::table('products')->count() == 0) {
+        try {
+            seed_default_products();
+        } catch (\Exception $e) {}
+    }
 
+    if (Schema::hasTable('products')) {
         $categoryMap = [
             'game' => ['game', 'voucher', 'mobile legends', 'free fire', 'pubg'],
             'pulsa' => ['pulsa', 'telkomsel', 'indosat', 'xl', 'axis', 'tri', 'smartfren'],
@@ -193,7 +273,7 @@ $loginHandler = function (Request $request) {
 
 Route::post('/login', $loginHandler);
 
-// Admin Dashboard - Integrasi Live Cek Saldo & Transaksi Digiflazz
+// Admin Dashboard
 Route::get('/admin', function (Request $request) {
     if (!Auth::check()) {
         return redirect('/login');
@@ -381,7 +461,7 @@ Route::post('/admin/save-settings', function (Request $request) {
 Route::post('/admin/sync-now', function () {
     if (!Auth::check()) return redirect('/login');
     try {
-        (new \Database\Seeders\ProductSeeder())->run();
+        seed_default_products();
     } catch (\Exception $e) {}
     return back()->with('success', 'Berhasil melakukan pembaruan/refresh data produk!');
 })->middleware('auth');
