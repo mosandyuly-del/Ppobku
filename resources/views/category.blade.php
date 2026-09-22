@@ -43,7 +43,7 @@
         <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-500/20">
             <span class="text-[10px] font-black uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full">Katalog Digital</span>
             <h2 class="text-2xl font-black mt-2">{{ $title }}</h2>
-            <p class="text-xs text-blue-100 mt-1">Gunakan filter provider atau masukkan nomor HP untuk penyaringan otomatis.</p>
+            <p class="text-xs text-blue-100 mt-1">Pilih produk atau gunakan filter provider di bawah.</p>
         </div>
 
         <!-- Input Nomor HP Utama -->
@@ -61,7 +61,7 @@
         <!-- Baris Filter Layanan / Brand Provider -->
         <div class="space-y-2">
             <div class="flex justify-between items-center">
-                <span class="text-xs font-extrabold text-slate-700 uppercase">Filter Layanan / Provider</span>
+                <span class="text-xs font-extrabold text-slate-700 uppercase">Filter Provider</span>
                 <span id="filter_count" class="text-[10px] font-bold text-slate-400">Menampilkan Semua</span>
             </div>
             <div class="flex space-x-2 overflow-x-auto no-scrollbar py-1">
@@ -83,19 +83,16 @@
                 <button onclick="filterByBrand('tri')" class="filter-btn bg-white border border-slate-200 hover:border-blue-400 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition shrink-0 shadow-sm" data-brand="tri">
                     Tri
                 </button>
-                <button onclick="filterByBrand('smartfren')" class="filter-btn bg-white border border-slate-200 hover:border-blue-400 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition shrink-0 shadow-sm" data-brand="smartfren">
-                    Smartfren
-                </button>
             </div>
         </div>
 
-        <!-- Filter Pencarian Nama Produk -->
+        <!-- Filter Search Nama Produk -->
         <div>
-            <input type="text" id="search_product" placeholder="🔍 Cari nama produk (misal: 1 GB, Freedom, OMG, Bronet)..." 
+            <input type="text" id="search_product" placeholder="🔍 Cari nama produk..." 
                 class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
         </div>
 
-        <!-- Grid Produk -->
+        <!-- Grid Produk (Default Tampil Semua) -->
         <div id="product_grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             @forelse($products as $p)
                 @php
@@ -109,7 +106,7 @@
                     <div>
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-md uppercase">{{ $p->brand ?? 'PPOB' }}</span>
-                            <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">Proses 1-3s</span>
+                            <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">Instan</span>
                         </div>
                         <h3 class="font-extrabold text-slate-900 text-sm leading-snug">{{ $p->name }}</h3>
                         <p class="text-xs font-black text-blue-600 mt-2">Rp {{ number_format($p->price, 0, ',', '.') }}</p>
@@ -122,16 +119,15 @@
                 </div>
             @empty
                 <div class="col-span-full bg-white p-8 rounded-3xl border border-slate-200 text-center">
-                    <p class="text-xs text-slate-400 font-bold">Belum ada produk di kategori ini.</p>
+                    <p class="text-xs text-slate-400 font-bold">Produk belum diisi di database. Silakan tambah produk di Admin Panel.</p>
                 </div>
             @endforelse
         </div>
 
-        <!-- State Hasil Pencarian Kosong -->
         <div id="not_found_state" class="hidden bg-white p-8 rounded-3xl border border-dashed border-slate-300 text-center space-y-2">
             <div class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400 font-bold text-xl">🔍</div>
             <h3 class="font-extrabold text-slate-800 text-sm">Produk Tidak Ditemukan</h3>
-            <p class="text-xs text-slate-400 max-w-xs mx-auto">Coba gunakan kata kunci lain atau pilih filter "Semua".</p>
+            <p class="text-xs text-slate-400 max-w-xs mx-auto">Klik tombol "Semua" pada filter provider.</p>
         </div>
 
     </main>
@@ -139,7 +135,6 @@
     <!-- Modal Konfirmasi Checkout -->
     <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-slate-100 space-y-4">
-            
             <div class="flex justify-between items-center pb-2 border-b border-slate-100">
                 <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase">Konfirmasi Pembelian</span>
                 <button onclick="closeCheckout()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
@@ -155,50 +150,28 @@
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Nomor Tujuan / ID Pelanggan</label>
+                    <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Nomor Tujuan</label>
                     <input type="text" name="target_no" id="modal_target_no" required readonly
                         class="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Metode Pembayaran</label>
-                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs font-bold text-slate-800">
-                        <span>QRIS DANA (Mosandy cell)</span>
-                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded">MANUAL WA</span>
-                    </div>
                 </div>
 
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-xl text-xs shadow-lg shadow-blue-500/25 transition">
                     Lanjut Pembayaran &rarr;
                 </button>
             </form>
-
         </div>
     </div>
 
-    <!-- Script Logic Filter Dinamis -->
     <script type="text/javascript">
-        const prefixMap = {
-            'telkomsel': ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'],
-            'indosat': ['0814', '0815', '0816', '0855', '0856', '0857', '0858'],
-            'xl': ['0817', '0818', '0819', '0859', '0877', '0878'],
-            'axis': ['0831', '0832', '0833', '0838'],
-            'tri': ['0895', '0896', '0897', '0898', '0899'],
-            'smartfren': ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889']
-        };
-
-        const phoneInput = document.getElementById('input_phone');
-        const searchInput = document.getElementById('search_product');
         const productCards = document.querySelectorAll('.product-card');
         const notFoundState = document.getElementById('not_found_state');
-        const operatorBadge = document.getElementById('operator_badge');
-        const operatorName = document.getElementById('operator_name');
+        const searchInput = document.getElementById('search_product');
+        const phoneInput = document.getElementById('input_phone');
         const filterBtns = document.querySelectorAll('.filter-btn');
 
         let activeBrand = 'all';
 
         function applyFilters() {
-            let phone = phoneInput.value.trim().replace(/[^0-9]/g, '');
             let keyword = searchInput.value.trim().toLowerCase();
             let visibleCount = 0;
 
@@ -206,7 +179,7 @@
                 let cardBrand = card.getAttribute('data-brand');
                 let fulltext = card.getAttribute('data-fulltext');
 
-                let matchBrand = (activeBrand === 'all') || (cardBrand === activeBrand);
+                let matchBrand = (activeBrand === 'all') || (cardBrand === activeBrand) || (fulltext.includes(activeBrand));
                 let matchKeyword = !keyword || fulltext.includes(keyword);
 
                 if (matchBrand && matchKeyword) {
@@ -242,35 +215,6 @@
             applyFilters();
         }
 
-        phoneInput.addEventListener('input', function() {
-            let phone = this.value.trim().replace(/[^0-9]/g, '');
-            this.value = phone;
-
-            if (phone.length >= 4) {
-                let prefix = phone.substring(0, 4);
-                let detectedProvider = null;
-
-                for (let provider in prefixMap) {
-                    if (prefixMap[provider].includes(prefix)) {
-                        detectedProvider = provider;
-                        break;
-                    }
-                }
-
-                if (detectedProvider) {
-                    operatorBadge.classList.remove('hidden');
-                    operatorName.innerText = detectedProvider.toUpperCase();
-                    filterByBrand(detectedProvider);
-                } else {
-                    operatorBadge.classList.add('hidden');
-                }
-            } else {
-                operatorBadge.classList.add('hidden');
-            }
-
-            applyFilters();
-        });
-
         searchInput.addEventListener('input', applyFilters);
 
         function openCheckout(code, name, price) {
@@ -292,10 +236,6 @@
             document.getElementById('checkoutModal').classList.add('hidden');
         }
     </script>
-
-    <footer class="text-center text-[10px] text-slate-400 py-4">
-        &copy; {{ date('Y') }} MOSANDY STORE • All Rights Reserved.
-    </footer>
 
 </body>
 </html>
