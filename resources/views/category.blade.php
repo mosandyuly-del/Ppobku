@@ -43,7 +43,7 @@
         <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-500/20">
             <span class="text-[10px] font-black uppercase tracking-wider bg-white/20 px-3 py-1 rounded-full">Katalog Digital</span>
             <h2 class="text-2xl font-black mt-2">{{ $title }}</h2>
-            <p class="text-xs text-blue-100 mt-1">Masukkan nomor HP tujuan untuk mendeteksi provider dan menampilkan paket secara otomatis.</p>
+            <p class="text-xs text-blue-100 mt-1">Masukkan nomor HP tujuan untuk mendeteksi provider dan memilih paket sesuai masa aktif.</p>
         </div>
 
         <!-- Input Nomor HP Utama untuk Auto Detection -->
@@ -59,10 +59,10 @@
             <p id="phone_hint" class="text-[11px] font-semibold text-slate-400">Masukkan minimal 4 digit nomor HP untuk memunculkan produk spesifik provider.</p>
         </div>
 
-        <!-- Filter Masa Aktif / Durasi Paket (Harian, Mingguan, Bulanan) -->
+        <!-- Filter Masa Aktif / Durasi Paket Baru -->
         <div class="space-y-2">
             <div class="flex justify-between items-center">
-                <span class="text-xs font-extrabold text-slate-700 uppercase">Masa Aktif / Durasi Paket</span>
+                <span class="text-xs font-extrabold text-slate-700 uppercase">Masa Aktif Paket</span>
                 <span id="filter_count" class="text-[10px] font-bold text-slate-400">Menampilkan Semua</span>
             </div>
             <div class="flex space-x-2 overflow-x-auto no-scrollbar py-1">
@@ -70,20 +70,23 @@
                     Semua Masa Aktif
                 </button>
                 <button onclick="filterDuration('harian')" class="duration-btn bg-white border border-slate-200 hover:border-blue-400 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition shrink-0 shadow-sm" data-duration="harian">
-                    ⚡ Harian (1-3 Hari)
+                    ⚡ 1-5 Hari
                 </button>
                 <button onclick="filterDuration('mingguan')" class="duration-btn bg-white border border-slate-200 hover:border-blue-400 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition shrink-0 shadow-sm" data-duration="mingguan">
-                    📅 Mingguan (7 Hari)
+                    📅 7 Hari
+                </button>
+                <button onclick="filterDuration('14hari')" class="duration-btn bg-white border border-slate-200 hover:border-blue-400 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition shrink-0 shadow-sm" data-duration="14hari">
+                    📆 14 Hari
                 </button>
                 <button onclick="filterDuration('bulanan')" class="duration-btn bg-white border border-slate-200 hover:border-blue-400 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition shrink-0 shadow-sm" data-duration="bulanan">
-                    📆 Bulanan (30 Hari)
+                    🗓️ Bulanan (28-30 Hari)
                 </button>
             </div>
         </div>
 
         <!-- Filter Search Kata Kunci -->
         <div>
-            <input type="text" id="search_product" placeholder="🔍 Cari nama paket (misal: 1 GB, Combo, Freedom, OMG)..." 
+            <input type="text" id="search_product" placeholder="🔍 Cari nama paket..." 
                 class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
         </div>
 
@@ -161,7 +164,6 @@
         </div>
     </div>
 
-    <!-- Script Auto Detection + Durasi Filter Logic -->
     <script type="text/javascript">
         const prefixMap = {
             'telkomsel': ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'],
@@ -200,14 +202,16 @@
                     }
                 }
 
-                // Match Durasi Paket
+                // Match Durasi Masa Aktif Baru
                 let matchDuration = true;
                 if (selectedDuration === 'harian') {
-                    matchDuration = fulltext.includes('1 hari') || fulltext.includes('2 hari') || fulltext.includes('3 hari') || fulltext.includes('harian');
+                    matchDuration = fulltext.includes('1 hari') || fulltext.includes('2 hari') || fulltext.includes('3 hari') || fulltext.includes('4 hari') || fulltext.includes('5 hari') || fulltext.includes('harian');
                 } else if (selectedDuration === 'mingguan') {
-                    matchDuration = fulltext.includes('7 hari') || fulltext.includes('minggu');
+                    matchDuration = fulltext.includes('7 hari') || fulltext.includes('seminggu');
+                } else if (selectedDuration === '14hari') {
+                    matchDuration = fulltext.includes('14 hari') || fulltext.includes('2 minggu');
                 } else if (selectedDuration === 'bulanan') {
-                    matchDuration = fulltext.includes('30 hari') || fulltext.includes('bulan');
+                    matchDuration = fulltext.includes('28 hari') || fulltext.includes('29 hari') || fulltext.includes('30 hari') || fulltext.includes('31 hari') || fulltext.includes('bulanan') || fulltext.includes('1 bulan');
                 }
 
                 // Match Keyword Search
