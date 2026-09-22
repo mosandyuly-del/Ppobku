@@ -27,6 +27,7 @@ if (!Schema::hasTable('transactions')) {
             $table->string('target_no')->nullable();
             $table->integer('price')->default(0);
             $table->string('status')->default('PENDING');
+            $table->text('sn')->nullable();
             $table->timestamps();
         });
     } catch (\Exception $e) {}
@@ -128,7 +129,6 @@ Route::get('/category/{slug}', function ($slug) {
     ]);
 });
 
-// Process Checkout & Buat Multichannel Payment Midtrans
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = trim($request->input('target_no'));
@@ -165,51 +165,11 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
-    // Midtrans Configuration - Mengaktifkan Semua Channel Pembayaran
-    $serverKey = get_setting('MIDTRANS_SERVER_KEY');
-    $snapToken = null;
-
-    if ($serverKey) {
-        \Midtrans\Config::$serverKey = $serverKey;
-        \Midtrans\Config::$isProduction = (get_setting('MIDTRANS_MODE') === 'production');
-        \Midtrans\Config::$isSanitized = true;
-        \Midtrans\Config::$is3ds = true;
-
-        $params = [
-            'transaction_details' => [
-                'order_id' => $trxId,
-                'gross_amount' => $totalBayar,
-            ],
-            'item_details' => [[
-                'id' => $productCode,
-                'price' => $totalBayar,
-                'quantity' => 1,
-                'name' => substr($product->name ?? 'Produk PPOB', 0, 50)
-            ]],
-            'customer_details' => [
-                'first_name' => 'Pelanggan',
-                'phone' => $targetNo,
-            ],
-            // Mengaktifkan QRIS, Virtual Account, E-Wallet, & Mini Market
-            'enabled_payments' => [
-                'gopay', 'qris', 'shopeepay', 
-                'bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'permata_va', 'other_va',
-                'indomaret', 'alfamart'
-            ]
-        ];
-
-        try {
-            $snapToken = \Midtrans\Snap::getSnapToken($params);
-        } catch (\Exception $e) {}
-    }
-
     return view('checkout', [
         'trx_id' => $trxId,
         'product' => $product,
         'target_no' => $targetNo,
-        'total' => $totalBayar,
-        'snap_token' => $snapToken,
-        'client_key' => get_setting('MIDTRANS_CLIENT_KEY')
+        'total' => $totalBayar
     ]);
 });
 
@@ -232,7 +192,7 @@ $loginHandler = function (Request $request) {
 
 Route::post('/login', $loginHandler);
 
-// Admin Dashboard
+// Admin Dashboard - Integrasi Live Cek Saldo & Transaksi Digiflazz
 Route::get('/admin', function (Request $request) {
     if (!Auth::check()) {
         return redirect('/login');
@@ -262,31 +222,11 @@ Route::get('/admin', function (Request $request) {
         $activeProductsCount = DB::table('products')->where('status', 'active')->count();
     }
 
-    $rekap = [
-        'total_omset' => 0,
-        'total_profit' => 0,
-        'trx_success' => 0,
-        'trx_pending' => 0,
-        'trx_failed' => 0,
-    ];
-
-    if (Schema::hasTable('transactions')) {
-        $successTrx = DB::table('transactions')->where('status', 'SUCCESS')->get();
-        $rekap['trx_success'] = $successTrx->count();
-        $rekap['trx_pending'] = DB::table('transactions')->where('status', 'PENDING')->count();
-        $rekap['trx_failed'] = DB::table('transactions')->whereIn('status', ['FAILED', 'EXPIRED'])->count();
-
-        $markupFlat = (int) get_setting('MARKUP_FLAT', 1500);
-        foreach ($successTrx as $trx) {
-            $rekap['total_omset'] += $trx->price;
-            $rekap['total_profit'] += $markupFlat;
-        }
-    }
-
     $username = get_setting('DIGIFLAZZ_USERNAME');
     $apiKey = get_setting('DIGIFLAZZ_KEY');
     $digiflazzBalance = 0;
 
+    // Cek Saldo Real-Time dari API Digiflazz
     if ($username && $apiKey) {
         $sign = md5($username . $apiKey . 'depo');
         $payload = ['cmd' => 'deposit', 'username' => $username, 'sign' => $sign];
@@ -314,15 +254,12 @@ Route::get('/admin', function (Request $request) {
         'digiflazzUsername' => $username,
         'digiflazzKey' => $apiKey,
         'markupFlat' => get_setting('MARKUP_FLAT', 1500),
-        'midtransClientKey' => get_setting('MIDTRANS_CLIENT_KEY'),
-        'midtransServerKey' => get_setting('MIDTRANS_SERVER_KEY'),
-        'announcementText' => get_setting('ANNOUNCEMENT_TEXT'),
-        'rekap' => $rekap,
         'recentTrx' => $recentTrx
     ]);
 })->middleware('auth');
 
-Route::post('/admin/retry-digiflazz', function (Request $request) {
+// Route Kirim/Tembak Pesanan Langsung ke API Digiflazz
+Route::post('/admin/process-digiflazz', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
     $trxId = $request->input('trx_id');
@@ -333,79 +270,104 @@ Route::post('/admin/retry-digiflazz', function (Request $request) {
             $username = get_setting('DIGIFLAZZ_USERNAME');
             $apiKey = get_setting('DIGIFLAZZ_KEY');
 
-            if ($username && $apiKey) {
-                $sign = md5($username . $apiKey . $trxId);
-                $payload = [
-                    'username' => $username,
-                    'buyer_sku_code' => $trx->product_code ?? '',
-                    'customer_no' => $trx->target_no ?? '',
-                    'ref_id' => $trxId,
-                    'sign' => $sign
-                ];
+            if (!$username || !$apiKey) {
+                return back()->with('error', 'Username atau Key Digiflazz belum diatur di sistem.');
+            }
 
-                $ch = curl_init('https://api.digiflazz.com/v1/transaction');
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_exec($ch);
-                curl_close($ch);
+            // Generate Sign MD5 untuk Transaksi Digiflazz
+            $sign = md5($username . $apiKey . $trxId);
+            $payload = [
+                'username' => $username,
+                'buyer_sku_code' => $trx->product_code ?? '',
+                'customer_no' => $trx->target_no ?? '',
+                'ref_id' => $trxId,
+                'sign' => $sign
+            ];
 
-                DB::table('transactions')->where('trx_id', $trxId)->update(['status' => 'SUCCESS', 'updated_at' => now()]);
-                return back()->with('success', 'Berhasil melakukan tembak ulang ke Digiflazz!');
+            $ch = curl_init('https://api.digiflazz.com/v1/transaction');
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+            $resData = json_decode($response, true);
+
+            if (isset($resData['data'])) {
+                $statusDigi = $resData['data']['status'] ?? 'PENDING';
+                $sn = $resData['data']['sn'] ?? '';
+                $message = $resData['data']['rc'] ?? 'Sedang Diproses';
+
+                if ($statusDigi == 'Sukses' || $statusDigi == 'SUCCESS') {
+                    DB::table('transactions')->where('trx_id', $trxId)->update([
+                        'status' => 'SUCCESS',
+                        'sn' => $sn,
+                        'updated_at' => now()
+                    ]);
+                    return back()->with('success', "Transaksi {$trxId} Berhasil Dikirim ke Nomor Tujuan! SN: {$sn}");
+                } else if ($statusDigi == 'Gagal' || $statusDigi == 'FAILED') {
+                    DB::table('transactions')->where('trx_id', $trxId)->update([
+                        'status' => 'FAILED',
+                        'updated_at' => now()
+                    ]);
+                    return back()->with('error', "Transaksi Gagal dari Digiflazz. Alasan: {$message}");
+                } else {
+                    DB::table('transactions')->where('trx_id', $trxId)->update([
+                        'status' => 'PENDING',
+                        'updated_at' => now()
+                    ]);
+                    return back()->with('success', "Transaksi {$trxId} berhasil dikirim ke Digiflazz & sedang diproses provider.");
+                }
+            } else {
+                return back()->with('error', 'Gagal merespons dari server Digiflazz.');
             }
         }
     }
-    return back()->with('error', 'Gagal memproses tembak ulang.');
+    return back()->with('error', 'Data transaksi tidak ditemukan.');
 })->middleware('auth');
 
-Route::post('/admin/update-status-manual', function (Request $request) {
+Route::post('/admin/add-product', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
-    $trxId = $request->input('trx_id');
-    $status = $request->input('status');
 
-    if (Schema::hasTable('transactions')) {
-        DB::table('transactions')->where('trx_id', $trxId)->update(['status' => $status, 'updated_at' => now()]);
+    $code = strtoupper(trim($request->input('code')));
+    $name = trim($request->input('name'));
+    $price = (int) $request->input('price');
+    $category = strtolower(trim($request->input('category')));
+    $brand = strtolower(trim($request->input('brand')));
+    $description = $request->input('description');
+
+    if ($code && $name && $price > 0 && Schema::hasTable('products')) {
+        DB::table('products')->updateOrInsert(
+            ['code' => $code],
+            [
+                'name' => $name,
+                'sku' => $code,
+                'price' => $price,
+                'original_price' => $price,
+                'status' => 'active',
+                'category' => $category,
+                'brand' => $brand,
+                'description' => $description,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+        return back()->with('success', 'Produk custom "' . $name . '" berhasil ditambahkan/diperbarui!');
     }
-    return back()->with('success', 'Status transaksi berhasil diubah secara manual!');
+
+    return back()->with('error', 'Gagal menambahkan produk. Pastikan Kode, Nama, dan Harga terisi dengan benar.');
 })->middleware('auth');
 
-Route::get('/admin/export-csv', function () {
+Route::post('/admin/delete-product', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
+    $code = $request->input('code');
 
-    $fileName = 'rekap_penjualan_' . date('Y-m-d') . '.csv';
-    $transactions = Schema::hasTable('transactions') ? DB::table('transactions')->orderBy('id', 'desc')->get() : collect();
-
-    $headers = [
-        "Content-type"        => "text/csv",
-        "Content-Disposition" => "attachment; filename=$fileName",
-        "Pragma"              => "no-cache",
-        "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-        "Expires"             => "0"
-    ];
-
-    $callback = function() use($transactions) {
-        $file = fopen('php://output', 'w');
-        fputcsv($file, ['ID Transaksi', 'Nama Produk', 'Kode Produk', 'Nomor Tujuan', 'Harga Jual', 'Status', 'Tanggal']);
-
-        foreach ($transactions as $row) {
-            fputcsv($file, [$row->trx_id, $row->product_name, $row->product_code ?? '', $row->target_no, $row->price, $row->status, $row->created_at]);
-        }
-        fclose($file);
-    };
-
-    return response()->stream($callback, 200, $headers);
-})->middleware('auth');
-
-Route::post('/admin/add-blacklist', function (Request $request) {
-    if (!Auth::check()) return redirect('/login');
-    $targetNo = trim($request->input('target_no'));
-    $reason = $request->input('reason');
-
-    if ($targetNo && Schema::hasTable('blacklists')) {
-        DB::table('blacklists')->updateOrInsert(['target_no' => $targetNo], ['reason' => $reason, 'created_at' => now()]);
+    if ($code && Schema::hasTable('products')) {
+        DB::table('products')->where('code', $code)->delete();
+        return back()->with('success', 'Produk berhasil dihapus!');
     }
-    return back()->with('success', 'Nomor berhasil ditambahkan ke daftar terblokir (Blacklist)!');
+    return back()->with('error', 'Gagal menghapus produk.');
 })->middleware('auth');
 
 Route::post('/admin/save-settings', function (Request $request) {
@@ -414,11 +376,8 @@ Route::post('/admin/save-settings', function (Request $request) {
     set_setting('DIGIFLAZZ_USERNAME', $request->input('DIGIFLAZZ_USERNAME'));
     set_setting('DIGIFLAZZ_KEY', $request->input('DIGIFLAZZ_KEY'));
     set_setting('MARKUP_FLAT', $request->input('MARKUP_FLAT'));
-    set_setting('MIDTRANS_CLIENT_KEY', $request->input('MIDTRANS_CLIENT_KEY'));
-    set_setting('MIDTRANS_SERVER_KEY', $request->input('MIDTRANS_SERVER_KEY'));
-    set_setting('ANNOUNCEMENT_TEXT', $request->input('ANNOUNCEMENT_TEXT'));
 
-    return back()->with('success', 'Semua Pengaturan Admin & Store berhasil diperbarui!');
+    return back()->with('success', 'Pengaturan Digiflazz berhasil disimpan!');
 })->middleware('auth');
 
 Route::post('/admin/sync-now', function () {
