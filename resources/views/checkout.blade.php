@@ -3,24 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pilih Metode Pembayaran - MOSANDY STORE</title>
+    <title>Pembayaran QRIS - MOSANDY STORE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <?php if(!empty($client_key) && !empty($snap_token)): ?>
-        <script type="text/javascript" src="https://app.midtrans.com/snap/snap.js" data-client-key="<?php echo $client_key; ?>"></script>
-    <?php endif; ?>
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex items-center justify-center p-4">
 
     <div class="max-w-md w-full bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200">
         
-        <!-- Header -->
+        <!-- Header Pembayaran -->
         <div class="text-center mb-6">
-            <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2">Pilih Pembayaran 24 Jam</span>
+            <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2">Pembayaran Manual DANA</span>
             <h2 class="text-xl font-extrabold text-slate-900">Selesaikan Pembayaran</h2>
-            <p class="text-xs text-slate-400 mt-1">Pilih metode pembayaran sesuai keinginan kamu.</p>
+            <p class="text-xs text-slate-400 mt-1">Scan QRIS DANA di bawah dan lakukan konfirmasi ke WhatsApp Admin.</p>
         </div>
 
         <!-- Detail Pesanan -->
@@ -43,85 +40,64 @@
             </div>
         </div>
 
-        <?php if(!empty($snap_token)): ?>
-            <!-- Pilihan Metode Pembayaran Interaktif (Bisa Diklik) -->
-            <div class="space-y-3 mb-6">
-                <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Klik Opsi Pembayaran Di Bawah:</p>
-                
-                <button type="button" onclick="openSnap()" class="w-full p-3.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 border border-slate-200 rounded-2xl flex items-center justify-between text-xs font-extrabold text-slate-800 transition">
-                    <span class="flex items-center space-x-2">
-                        <span>📱</span>
-                        <span>QRIS All Payment (DANA, OVO, LinkAja)</span>
-                    </span>
-                    <span class="text-blue-600">&rarr;</span>
-                </button>
-
-                <button type="button" onclick="openSnap()" class="w-full p-3.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 border border-slate-200 rounded-2xl flex items-center justify-between text-xs font-extrabold text-slate-800 transition">
-                    <span class="flex items-center space-x-2">
-                        <span>💳</span>
-                        <span>Virtual Account Bank (BCA, Mandiri, BRI, BNI)</span>
-                    </span>
-                    <span class="text-blue-600">&rarr;</span>
-                </button>
-
-                <button type="button" onclick="openSnap()" class="w-full p-3.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 border border-slate-200 rounded-2xl flex items-center justify-between text-xs font-extrabold text-slate-800 transition">
-                    <span class="flex items-center space-x-2">
-                        <span>🚀</span>
-                        <span>E-Wallet Instan (GoPay / ShopeePay)</span>
-                    </span>
-                    <span class="text-blue-600">&rarr;</span>
-                </button>
-
-                <button type="button" onclick="openSnap()" class="w-full p-3.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 border border-slate-200 rounded-2xl flex items-center justify-between text-xs font-extrabold text-slate-800 transition">
-                    <span class="flex items-center space-x-2">
-                        <span>🏪</span>
-                        <span>Retail Outlet (Indomaret / Alfamart)</span>
-                    </span>
-                    <span class="text-blue-600">&rarr;</span>
-                </button>
+        <!-- QRIS DANA Bisnis Mosandy cell -->
+        <div class="text-center space-y-4">
+            <div class="bg-white p-4 inline-block rounded-3xl border-2 border-slate-200 shadow-md">
+                <div id="qrcode" class="flex justify-center"></div>
+                <div class="mt-3 text-center">
+                    <p class="text-xs font-black text-slate-900">Mosandy cell</p>
+                    <p class="text-[10px] font-mono text-slate-400">NMID: ID1026586951067</p>
+                </div>
             </div>
 
-            <button type="button" onclick="openSnap()" id="pay-button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/25 transition">
-                BAYAR SEKARANG &rarr;
-            </button>
-
-            <script type="text/javascript">
-                function openSnap() {
-                    snap.pay('<?php echo $snap_token; ?>', {
-                        onSuccess: function(result){ window.location.href = "/cek-pesanan?q=<?php echo $trx_id; ?>"; },
-                        onPending: function(result){ window.location.href = "/cek-pesanan?q=<?php echo $trx_id; ?>"; },
-                        onError: function(result){ alert("Pembayaran gagal!"); }
-                    });
-                }
-            </script>
-        <?php else: ?>
-            <!-- Fallback QR Jika Midtrans Server Key Belum Diisi di Admin -->
-            <div class="text-center space-y-4">
-                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] font-bold text-amber-800">
-                    ⚠️ Pilihan metode pembayaran lain akan aktif secara penuh setelah Midtrans Key dimasukkan di Admin Panel.
-                </div>
-                <div class="bg-white p-4 inline-block rounded-2xl border-2 border-dashed border-blue-200 shadow-sm">
-                    <div id="qrcode" class="flex justify-center"></div>
-                </div>
-                <p class="text-xs font-bold text-slate-700">Scan QRIS All Payment (DANA/OVO/GoPay)</p>
-                <a href="/cek-pesanan?q=<?php echo $trx_id; ?>" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 rounded-2xl text-xs transition">
-                    Cek Status Pesanan &rarr;
-                </a>
+            <!-- Petunjuk Langkah Pembayaran -->
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-left space-y-1.5 text-xs">
+                <p class="font-extrabold text-amber-900">⚠️ Langkah Konfirmasi Wajib:</p>
+                <ol class="list-decimal list-inside text-[11px] text-amber-800 space-y-1 font-semibold">
+                    <li>Scan Kode QRIS DANA di atas dari aplikasi E-Wallet/MBanking.</li>
+                    <li>Bayar pas sesuai nominal: <b class="text-slate-900">Rp <?php echo number_format($total, 0, ',', '.'); ?></b>.</li>
+                    <li>Screenshot / tangkap layar bukti pembayaran.</li>
+                    <li>Klik tombol hijau di bawah untuk konfirmasi ke WA Admin.</li>
+                </ol>
             </div>
-            <script type="text/javascript">
-                const defaultPayload = "00020101021126570011ID.NOBU.WWW011893600503000008807902150000000000000000303UMI51440014ID.QRIS.WWW0215ID10200212345675204581253033605802ID5913MOSANDY STORE6007JAKARTA63046C41";
-                new QRCode(document.getElementById("qrcode"), {
-                    text: defaultPayload,
-                    width: 180,
-                    height: 180
-                });
-            </script>
-        <?php endif; ?>
+
+            <?php
+                $waAdmin = "6287774802175";
+                $pesanWa = "Halo Admin MOSANDY STORE, saya sudah melakukan pembayaran via QRIS DANA.\n\n"
+                         . "*Detail Transaksi:*\n"
+                         . "• ID Transaksi: " . $trx_id . "\n"
+                         . "• Produk: " . ($product->name ?? 'Produk PPOB') . "\n"
+                         . "• Nomor Tujuan: " . $target_no . "\n"
+                         . "• Total Bayar: Rp " . number_format($total, 0, ',', '.') . "\n\n"
+                         . "Berikut saya lampirkan screenshot bukti pembayarannya. Mohon segera diproses. Terima kasih!";
+                $urlWa = "https://wa.me/" . $waAdmin . "?text=" . urlencode($pesanWa);
+            ?>
+
+            <!-- Tombol Kirim Bukti ke WhatsApp Admin -->
+            <a href="<?php echo $urlWa; ?>" target="_blank" 
+                class="block w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/25 transition">
+                📲 KONFIRMASI BUKTI BAYAR VIA WA &rarr;
+            </a>
+
+            <a href="/cek-pesanan?q=<?php echo $trx_id; ?>" class="block w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-3 rounded-2xl text-xs transition">
+                Cek Status Pesanan
+            </a>
+        </div>
 
         <div class="mt-6 text-center">
-            <a href="/" class="text-xs font-bold text-slate-400 hover:text-slate-600">&larr; Batalkan & Kembali</a>
+            <a href="/" class="text-xs font-bold text-slate-400 hover:text-slate-600">&larr; Batal & Kembali ke Store</a>
         </div>
     </div>
+
+    <!-- Generate QRIS Payload Mosandy Cell DANA Bisnis -->
+    <script type="text/javascript">
+        const danaQrisPayload = "00020101021126670016ID.CO.QRIS.WWW01189360091100223591290215ID10265869510670303UMI51440014ID.QRIS.WWW0215ID10265869510675204581253033605802ID5912Mosandy cell6007JAKARTA63041C34";
+        new QRCode(document.getElementById("qrcode"), {
+            text: danaQrisPayload,
+            width: 200,
+            height: 200
+        });
+    </script>
 
 </body>
 </html>
