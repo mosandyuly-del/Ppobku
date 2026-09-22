@@ -89,9 +89,10 @@ Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
     if (Schema::hasTable('products')) {
+        // Jika database produk kosong, panggil seeder secara otomatis
         if (DB::table('products')->count() == 0) {
             try {
-                \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+                (new \Database\Seeders\ProductSeeder())->run();
             } catch (\Exception $e) {}
         }
 
@@ -226,7 +227,6 @@ Route::get('/admin', function (Request $request) {
     $apiKey = get_setting('DIGIFLAZZ_KEY');
     $digiflazzBalance = 0;
 
-    // Cek Saldo Real-Time dari API Digiflazz
     if ($username && $apiKey) {
         $sign = md5($username . $apiKey . 'depo');
         $payload = ['cmd' => 'deposit', 'username' => $username, 'sign' => $sign];
@@ -258,7 +258,6 @@ Route::get('/admin', function (Request $request) {
     ]);
 })->middleware('auth');
 
-// Route Kirim/Tembak Pesanan Langsung ke API Digiflazz
 Route::post('/admin/process-digiflazz', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
@@ -274,7 +273,6 @@ Route::post('/admin/process-digiflazz', function (Request $request) {
                 return back()->with('error', 'Username atau Key Digiflazz belum diatur di sistem.');
             }
 
-            // Generate Sign MD5 untuk Transaksi Digiflazz
             $sign = md5($username . $apiKey . $trxId);
             $payload = [
                 'username' => $username,
@@ -383,9 +381,9 @@ Route::post('/admin/save-settings', function (Request $request) {
 Route::post('/admin/sync-now', function () {
     if (!Auth::check()) return redirect('/login');
     try {
-        \Illuminate\Support\Facades\Artisan::call('digiflazz:sync');
+        (new \Database\Seeders\ProductSeeder())->run();
     } catch (\Exception $e) {}
-    return back()->with('success', 'Berhasil melakukan sinkronisasi data produk!');
+    return back()->with('success', 'Berhasil melakukan pembaruan/refresh data produk!');
 })->middleware('auth');
 
 Route::get('/logout', function () {
