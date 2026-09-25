@@ -52,6 +52,11 @@ function set_setting($key, $value) {
     }
 }
 
+// Simpan IP Whitelist resmi Digiflazz ke setting bawaan
+if (Schema::hasTable('settings')) {
+    set_setting('DIGIFLAZZ_IP_WHITELIST', '52.74.250.133');
+}
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -185,11 +190,12 @@ Route::get('/admin', function (Request $request) {
         'activeProductsCount' => $activeProductsCount,
         'recentTrx' => $recentTrx,
         'digiflazzUsername' => get_setting('DIGIFLAZZ_USERNAME'),
-        'digiflazzKey' => get_setting('DIGIFLAZZ_KEY')
+        'digiflazzKey' => get_setting('DIGIFLAZZ_KEY'),
+        'digiflazzIp' => get_setting('DIGIFLAZZ_IP_WHITELIST', '52.74.250.133')
     ]);
 })->middleware('auth');
 
-// PROSES TEMBAK PAKET DATA VIA API DIGIFLAZZ SAAT STATUS DISUKSESTAN
+// PROSES EKSEKUSI API DIGIFLAZZ METHOD POST + HEADER APPLICATION/JSON
 Route::post('/admin/update-trx-status', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
@@ -204,8 +210,10 @@ Route::post('/admin/update-trx-status', function (Request $request) {
             $apiKey = get_setting('DIGIFLAZZ_KEY');
 
             if ($username && $apiKey) {
-                // Generate Sign MD5
+                // Generate Signature MD5
                 $sign = md5($username . $apiKey . $trxId);
+                
+                // Payload JSON
                 $payload = [
                     'username' => $username,
                     'buyer_sku_code' => $trx->product_code ?? '',
@@ -214,13 +222,24 @@ Route::post('/admin/update-trx-status', function (Request $request) {
                     'sign' => $sign
                 ];
 
+                // Request cURL via Method POST dengan Header Content-Type: application/json
                 $ch = curl_init('https://api.digiflazz.com/v1/transaction');
-                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ]);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                
                 $response = curl_exec($ch);
+                $curlError = curl_error($ch);
                 curl_close($ch);
+
+                if ($curlError) {
+                    return back()->with('error', "cURL Error: {$curlError}");
+                }
 
                 $resData = json_decode($response, true);
 
@@ -235,7 +254,7 @@ Route::post('/admin/update-trx-status', function (Request $request) {
                             'sn' => $sn,
                             'updated_at' => now()
                         ]);
-                        return back()->with('success', "API Digiflazz Sukses Terkirim! SN: {$sn}");
+                        return back()->with('success', "API Digiflazz Sukses Terkirim via POST JSON! SN: {$sn}");
                     } else if ($digiStatus === 'Gagal' || $digiStatus === 'FAILED') {
                         DB::table('transactions')->where('trx_id', $trxId)->update([
                             'status' => 'FAILED',
@@ -250,6 +269,8 @@ Route::post('/admin/update-trx-status', function (Request $request) {
                         return back()->with('success', "Transaksi dikirim ke Digiflazz & sedang diproses operator (Pending).");
                     }
                 }
+            } else {
+                return back()->with('error', 'Username atau Key Digiflazz belum dikonfigurasi di admin.');
             }
         }
     }
