@@ -33,70 +33,22 @@ if (!Schema::hasTable('transactions')) {
     } catch (\Exception $e) {}
 }
 
-if (!Schema::hasTable('blacklists')) {
-    try {
-        Schema::create('blacklists', function ($table) {
-            $table->id();
-            $table->string('target_no')->unique();
-            $table->string('reason')->nullable();
-            $table->timestamps();
-        });
-    } catch (\Exception $e) {}
+function get_setting($key, $default = '') {
+    if (Schema::hasTable('settings')) {
+        $item = DB::table('settings')->where('key', $key)->first();
+        if ($item && !empty($item->value)) {
+            return $item->value;
+        }
+    }
+    return env($key, $default);
 }
 
-function seed_default_products() {
-    if (!Schema::hasTable('products')) {
-        Schema::create('products', function ($table) {
-            $table->id();
-            $table->string('name')->nullable();
-            $table->string('code')->unique();
-            $table->string('sku')->nullable();
-            $table->integer('price')->default(0);
-            $table->integer('original_price')->default(0);
-            $table->string('status')->default('active');
-            $table->string('category')->nullable();
-            $table->string('brand')->nullable();
-            $table->text('description')->nullable();
-            $table->timestamps();
-        });
-    }
-
-    if (DB::table('products')->count() == 0) {
-        $products = [
-            ['code' => 'S1', 'name' => 'Telkomsel Pulsa 1.000', 'price' => 2800, 'brand' => 'telkomsel', 'category' => 'pulsa'],
-            ['code' => 'S5', 'name' => 'Telkomsel Pulsa 5.000', 'price' => 6700, 'brand' => 'telkomsel', 'category' => 'pulsa'],
-            ['code' => 'S10', 'name' => 'Telkomsel Pulsa 10.000', 'price' => 11700, 'brand' => 'telkomsel', 'category' => 'pulsa'],
-            ['code' => 'I5', 'name' => 'Indosat Pulsa 5.000', 'price' => 6600, 'brand' => 'indosat', 'category' => 'pulsa'],
-            ['code' => 'I10', 'name' => 'Indosat Pulsa 10.000', 'price' => 11600, 'brand' => 'indosat', 'category' => 'pulsa'],
-            ['code' => 'X5', 'name' => 'XL Pulsa 5.000', 'price' => 6700, 'brand' => 'xl', 'category' => 'pulsa'],
-            ['code' => 'X10', 'name' => 'XL Pulsa 10.000', 'price' => 11700, 'brand' => 'xl', 'category' => 'pulsa'],
-            ['code' => 'AX5', 'name' => 'Axis Pulsa 5.000', 'price' => 6650, 'brand' => 'axis', 'category' => 'pulsa'],
-            ['code' => 'AX10', 'name' => 'Axis Pulsa 10.000', 'price' => 11650, 'brand' => 'axis', 'category' => 'pulsa'],
-            ['code' => 'T5', 'name' => 'Tri Pulsa 5.000', 'price' => 6200, 'brand' => 'tri', 'category' => 'pulsa'],
-            ['code' => 'T10', 'name' => 'Tri Pulsa 10.000', 'price' => 11200, 'brand' => 'tri', 'category' => 'pulsa'],
-            ['code' => 'SD1', 'name' => 'Telkomsel Data OMG 1 GB 3 Hari', 'price' => 14500, 'brand' => 'telkomsel', 'category' => 'data'],
-            ['code' => 'ID1', 'name' => 'Indosat Freedom Internet 1 GB 5 Hari', 'price' => 10500, 'brand' => 'indosat', 'category' => 'data'],
-            ['code' => 'XD1', 'name' => 'XL Data Xtra Combo Flex 1.5 GB 30 Hari', 'price' => 18500, 'brand' => 'xl', 'category' => 'data'],
-            ['code' => 'AXD2', 'name' => 'Axis Data Bronet 2.5 GB 5 Hari', 'price' => 15160, 'brand' => 'axis', 'category' => 'data'],
-            ['code' => 'TD1', 'name' => 'Tri Data Happy 1 GB 5 Hari', 'price' => 9500, 'brand' => 'tri', 'category' => 'data'],
-        ];
-
-        foreach ($products as $p) {
-            DB::table('products')->updateOrInsert(
-                ['code' => $p['code']],
-                [
-                    'name' => $p['name'],
-                    'sku' => $p['code'],
-                    'price' => $p['price'],
-                    'original_price' => $p['price'],
-                    'status' => 'active',
-                    'category' => $p['category'],
-                    'brand' => $p['brand'],
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]
-            );
-        }
+function set_setting($key, $value) {
+    if (Schema::hasTable('settings')) {
+        DB::table('settings')->updateOrInsert(
+            ['key' => $key],
+            ['value' => $value, 'updated_at' => now()]
+        );
     }
 }
 
@@ -125,20 +77,12 @@ Route::get('/cek-pesanan', function (Request $request) {
 Route::get('/category/{slug}', function ($slug) {
     $products = collect();
 
-    if (!Schema::hasTable('products') || DB::table('products')->count() == 0) {
-        try {
-            seed_default_products();
-        } catch (\Exception $e) {}
-    }
-
     if (Schema::hasTable('products')) {
         $categoryMap = [
             'game' => ['game', 'voucher', 'mobile legends', 'free fire', 'pubg'],
             'pulsa' => ['pulsa', 'telkomsel', 'indosat', 'xl', 'axis', 'tri', 'smartfren'],
             'data' => ['data', 'paket', 'internet'],
             'pln-token' => ['pln', 'token'],
-            'pln-bill' => ['pln', 'tagihan'],
-            'pdam' => ['pdam', 'air'],
             'e-money' => ['e-money', 'wallet', 'dana', 'gopay', 'ovo', 'shopeepay'],
         ];
 
@@ -169,13 +113,6 @@ Route::get('/category/{slug}', function ($slug) {
 Route::post('/checkout', function (Request $request) {
     $productCode = $request->input('product_code');
     $targetNo = trim($request->input('target_no'));
-
-    if (Schema::hasTable('blacklists')) {
-        $isBlacklisted = DB::table('blacklists')->where('target_no', $targetNo)->exists();
-        if ($isBlacklisted) {
-            return back()->with('error', 'Nomor tujuan diblokir karena aktivitas mencurigakan.');
-        }
-    }
 
     $product = DB::table('products')
         ->where('code', $productCode)
@@ -214,39 +151,22 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
-$loginHandler = function (Request $request) {
+Route::post('/login', function (Request $request) {
     $credentials = $request->only('email', 'password');
-
     if (Auth::attempt($credentials)) {
         $request->session()->regenerate();
         return redirect()->intended('/admin');
     }
+    return back()->withErrors(['email' => 'Email atau password salah.']);
+});
 
-    return back()->withErrors([
-        'email' => 'Kredensial email atau password admin salah.',
-    ]);
-};
-
-Route::post('/login', $loginHandler);
-
-// Admin Dashboard Clean
+// Admin Dashboard
 Route::get('/admin', function (Request $request) {
-    if (!Auth::check()) {
-        return redirect('/login');
-    }
+    if (!Auth::check()) return redirect('/login');
 
-    $searchTrx = $request->input('search_trx');
     $recentTrx = collect();
-
     if (Schema::hasTable('transactions')) {
-        $trxQuery = DB::table('transactions')->orderBy('id', 'desc');
-
-        if ($searchTrx) {
-            $trxQuery->where('trx_id', 'LIKE', '%' . $searchTrx . '%')
-                     ->orWhere('target_no', 'LIKE', '%' . $searchTrx . '%');
-        }
-
-        $recentTrx = $trxQuery->limit(50)->get();
+        $recentTrx = DB::table('transactions')->orderBy('id', 'desc')->limit(50)->get();
     }
 
     $products = collect();
@@ -263,28 +183,85 @@ Route::get('/admin', function (Request $request) {
         'products' => $products,
         'totalProducts' => $totalProducts,
         'activeProductsCount' => $activeProductsCount,
-        'recentTrx' => $recentTrx
+        'recentTrx' => $recentTrx,
+        'digiflazzUsername' => get_setting('DIGIFLAZZ_USERNAME'),
+        'digiflazzKey' => get_setting('DIGIFLAZZ_KEY')
     ]);
 })->middleware('auth');
 
-// Ubah Status Transaksi Manual
+// PROSES TEMBAK PAKET DATA VIA API DIGIFLAZZ SAAT STATUS DISUKSESTAN
 Route::post('/admin/update-trx-status', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
     $trxId = $request->input('trx_id');
     $status = $request->input('status');
 
-    if (Schema::hasTable('transactions')) {
-        DB::table('transactions')->where('trx_id', $trxId)->update([
-            'status' => $status,
-            'updated_at' => now()
-        ]);
-        return back()->with('success', "Status transaksi {$trxId} berhasil diubah ke {$status}.");
+    if ($status === 'SUCCESS') {
+        $trx = DB::table('transactions')->where('trx_id', $trxId)->first();
+
+        if ($trx) {
+            $username = get_setting('DIGIFLAZZ_USERNAME');
+            $apiKey = get_setting('DIGIFLAZZ_KEY');
+
+            if ($username && $apiKey) {
+                // Generate Sign MD5
+                $sign = md5($username . $apiKey . $trxId);
+                $payload = [
+                    'username' => $username,
+                    'buyer_sku_code' => $trx->product_code ?? '',
+                    'customer_no' => $trx->target_no ?? '',
+                    'ref_id' => $trxId,
+                    'sign' => $sign
+                ];
+
+                $ch = curl_init('https://api.digiflazz.com/v1/transaction');
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                $response = curl_exec($ch);
+                curl_close($ch);
+
+                $resData = json_decode($response, true);
+
+                if (isset($resData['data'])) {
+                    $sn = $resData['data']['sn'] ?? '';
+                    $digiStatus = $resData['data']['status'] ?? 'PENDING';
+                    $rcMessage = $resData['data']['rc'] ?? 'Sedang diproses';
+
+                    if ($digiStatus === 'Sukses' || $digiStatus === 'SUCCESS') {
+                        DB::table('transactions')->where('trx_id', $trxId)->update([
+                            'status' => 'SUCCESS',
+                            'sn' => $sn,
+                            'updated_at' => now()
+                        ]);
+                        return back()->with('success', "API Digiflazz Sukses Terkirim! SN: {$sn}");
+                    } else if ($digiStatus === 'Gagal' || $digiStatus === 'FAILED') {
+                        DB::table('transactions')->where('trx_id', $trxId)->update([
+                            'status' => 'FAILED',
+                            'updated_at' => now()
+                        ]);
+                        return back()->with('error', "Digiflazz Menolak Transaksi. Pesan: {$rcMessage}");
+                    } else {
+                        DB::table('transactions')->where('trx_id', $trxId)->update([
+                            'status' => 'PENDING',
+                            'updated_at' => now()
+                        ]);
+                        return back()->with('success', "Transaksi dikirim ke Digiflazz & sedang diproses operator (Pending).");
+                    }
+                }
+            }
+        }
     }
-    return back()->with('error', 'Gagal memperbarui transaksi.');
+
+    DB::table('transactions')->where('trx_id', $trxId)->update([
+        'status' => $status,
+        'updated_at' => now()
+    ]);
+
+    return back()->with('success', "Status transaksi {$trxId} diperbarui.");
 })->middleware('auth');
 
-// Tambah Produk Manual
 Route::post('/admin/add-product', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
@@ -311,13 +288,11 @@ Route::post('/admin/add-product', function (Request $request) {
                 'updated_at' => now()
             ]
         );
-        return back()->with('success', 'Produk "' . $name . '" berhasil ditambahkan/diperbarui!');
+        return back()->with('success', 'Produk berhasil disimpan!');
     }
-
-    return back()->with('error', 'Gagal menambahkan produk. Pastikan Kode, Nama, dan Harga terisi dengan benar.');
+    return back()->with('error', 'Gagal menyimpan produk.');
 })->middleware('auth');
 
-// Hapus Produk
 Route::post('/admin/delete-product', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
     $code = $request->input('code');
