@@ -317,3 +317,8 @@ Route::get('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
+
+Route::get('/cek-ip', function() {
+    $ip = @file_get_contents('https://api.ipify.org');
+    return "IP Railway Kamu Saat Ini: " . ($ip ?: 'Gagal mengambil IP');
+});
