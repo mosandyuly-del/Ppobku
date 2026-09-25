@@ -52,11 +52,6 @@ function set_setting($key, $value) {
     }
 }
 
-// Simpan IP Whitelist resmi Digiflazz ke setting bawaan
-if (Schema::hasTable('settings')) {
-    set_setting('DIGIFLAZZ_IP_WHITELIST', '52.74.250.133');
-}
-
 Route::get('/', function () {
     return view('welcome');
 });
@@ -190,12 +185,11 @@ Route::get('/admin', function (Request $request) {
         'activeProductsCount' => $activeProductsCount,
         'recentTrx' => $recentTrx,
         'digiflazzUsername' => get_setting('DIGIFLAZZ_USERNAME'),
-        'digiflazzKey' => get_setting('DIGIFLAZZ_KEY'),
-        'digiflazzIp' => get_setting('DIGIFLAZZ_IP_WHITELIST', '52.74.250.133')
+        'digiflazzKey' => get_setting('DIGIFLAZZ_KEY')
     ]);
 })->middleware('auth');
 
-// PROSES EKSEKUSI API DIGIFLAZZ METHOD POST + HEADER APPLICATION/JSON
+// PROSES EKSEKUSI API DIGIFLAZZ METHOD POST JSON DENGAN DETEKSI RC 45
 Route::post('/admin/update-trx-status', function (Request $request) {
     if (!Auth::check()) return redirect('/login');
 
@@ -210,10 +204,8 @@ Route::post('/admin/update-trx-status', function (Request $request) {
             $apiKey = get_setting('DIGIFLAZZ_KEY');
 
             if ($username && $apiKey) {
-                // Generate Signature MD5
                 $sign = md5($username . $apiKey . $trxId);
                 
-                // Payload JSON
                 $payload = [
                     'username' => $username,
                     'buyer_sku_code' => $trx->product_code ?? '',
@@ -222,7 +214,6 @@ Route::post('/admin/update-trx-status', function (Request $request) {
                     'sign' => $sign
                 ];
 
-                // Request cURL via Method POST dengan Header Content-Type: application/json
                 $ch = curl_init('https://api.digiflazz.com/v1/transaction');
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
@@ -234,19 +225,14 @@ Route::post('/admin/update-trx-status', function (Request $request) {
                 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
                 
                 $response = curl_exec($ch);
-                $curlError = curl_error($ch);
                 curl_close($ch);
-
-                if ($curlError) {
-                    return back()->with('error', "cURL Error: {$curlError}");
-                }
 
                 $resData = json_decode($response, true);
 
                 if (isset($resData['data'])) {
                     $sn = $resData['data']['sn'] ?? '';
                     $digiStatus = $resData['data']['status'] ?? 'PENDING';
-                    $rcMessage = $resData['data']['rc'] ?? 'Sedang diproses';
+                    $rc = $resData['data']['rc'] ?? '';
 
                     if ($digiStatus === 'Sukses' || $digiStatus === 'SUCCESS') {
                         DB::table('transactions')->where('trx_id', $trxId)->update([
@@ -254,13 +240,15 @@ Route::post('/admin/update-trx-status', function (Request $request) {
                             'sn' => $sn,
                             'updated_at' => now()
                         ]);
-                        return back()->with('success', "API Digiflazz Sukses Terkirim via POST JSON! SN: {$sn}");
+                        return back()->with('success', "API Digiflazz Sukses Terkirim! SN: {$sn}");
+                    } else if ($rc === '45') {
+                        return back()->with('error', "Gagal (RC 45): IP Server Railway diblokir oleh Digiflazz. Mohon KOSONGKAN/NON-AKTIFKAN IP Whitelist di menu Atur Koneksi pada Akun Member Digiflazz kamu.");
                     } else if ($digiStatus === 'Gagal' || $digiStatus === 'FAILED') {
                         DB::table('transactions')->where('trx_id', $trxId)->update([
                             'status' => 'FAILED',
                             'updated_at' => now()
                         ]);
-                        return back()->with('error', "Digiflazz Menolak Transaksi. Pesan: {$rcMessage}");
+                        return back()->with('error', "Digiflazz Menolak Transaksi. Kode Respon (RC): {$rc}");
                     } else {
                         DB::table('transactions')->where('trx_id', $trxId)->update([
                             'status' => 'PENDING',
