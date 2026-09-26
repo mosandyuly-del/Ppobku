@@ -1,1 +1,1 @@
-web: touch database/database.sqlite && php artisan migrate --force && php artisan db:seed --force && vendor/bin/heroku-php-apache2 public/
+web: touch /tmp/database.sqlite && php artisan migrate --force && php artisan db:seed --force && vendor/bin/heroku-php-apache2 public/
