@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function checkout(Request $request, $id)
+    public function checkout(Request $request, $trx_id)
     {
-        $product = DB::table('products')->where('id', $id)->orWhere('buyer_sku_code', $id)->first();
+        $product = DB::table('products')->where('id', $trx_id)->orWhere('buyer_sku_code', $trx_id)->first();
 
         if (!$product) {
             return redirect('/')->with('error', 'Produk tidak ditemukan.');
@@ -30,30 +30,18 @@ class OrderController extends Controller
 
         $product = DB::table('products')->where('id', $request->product_id)->first();
         $trx_id = 'TRX-' . strtoupper(uniqid());
-        $price = $product->price_sell ?? $product->price ?? 0;
 
         DB::table('orders')->insert([
             'trx_id' => $trx_id,
             'product_name' => $product->name ?? 'Produk Digital',
             'phone' => $request->phone,
-            'price' => $price,
-            'status' => 'Menunggu Pembayaran',
+            'price' => $product->price_sell ?? $product->price ?? 0,
+            'status' => 'Pending',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return redirect('/pembayaran/' . $trx_id);
-    }
-
-    public function payment($trx_id)
-    {
-        $order = DB::table('orders')->where('trx_id', $trx_id)->first();
-
-        if (!$order) {
-            return redirect('/');
-        }
-
-        return view('payment_qris', ['order' => $order]);
+        return redirect('/cek-pesanan?trx_id=' . $trx_id);
     }
 
     public function checkStatus(Request $request)
