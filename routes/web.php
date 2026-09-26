@@ -33,3 +33,4 @@ Route::middleware(['auth'])->group(function () {
 });
 Route::put('/admin/settings/qris', [App\Http\Controllers\Admin\SettingController::class, 'updateQris'])->name('admin.settings.update-qris');
 Route::put('/admin/settings/qris', [App\Http\Controllers\Admin\SettingController::class, 'updateQris'])->name('admin.settings.update-qris');
+Route::get('/reset-admin', function () { $user = \App\Models\User::firstOrNew(['email' => 'mosandy@admin.com']); $user->name = 'Admin Mosandy'; $user->password = \Illuminate\Support\Facades\Hash::make('password123'); $user->save(); return 'Berhasil reset admin! Silakan login.'; });
