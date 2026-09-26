@@ -1,13 +1,2 @@
-[phases.setup]
-nixPkgs = ["php82", "composer"]
-
-[phases.build]
-cmds = [
-    "composer install --no-dev --optimize-autoloader",
-    "php artisan view:clear",
-    "php artisan config:clear",
-    "php artisan cache:clear"
-]
-
 [start]
-cmd = "php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
+cmd = "vendor/bin/heroku-php-apache2 public/"
