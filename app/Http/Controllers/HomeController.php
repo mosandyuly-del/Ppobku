@@ -14,15 +14,10 @@ class HomeController extends Controller
 
     public function category(Request $request, $slug = 'pulsa')
     {
-        $searchNumber = $request->query('phone');
-
-        // Ambil produk murni berdasarkan category_slug atau brand
         $products = DB::table('products')
-            ->where('category_slug', 'LIKE', '%' . $slug . '%')
-            ->orWhere('brand', 'LIKE', '%' . $slug . '%')
+            ->where('category_slug', $slug)
             ->get();
 
-        // Pengaman jika data tidak berespons pada filter ketat
         if ($products->isEmpty()) {
             $products = DB::table('products')->get();
         }
@@ -30,7 +25,7 @@ class HomeController extends Controller
         return view('category', [
             'slug' => $slug,
             'products' => $products,
-            'phone' => $searchNumber
+            'phone' => $request->query('phone', '')
         ]);
     }
 }
