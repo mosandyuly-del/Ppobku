@@ -24,9 +24,14 @@
                     <p class="text-xs font-semibold text-blue-200 tracking-wide uppercase">Selamat Datang di</p>
                     <h1 class="text-xl font-extrabold tracking-tight">MOSANDY STORE ✨</h1>
                 </div>
-                <a href="/cek-pesanan" class="glass-card text-blue-900 text-xs font-extrabold px-3.5 py-2 rounded-full shadow-sm active-scale transition">
-                    Cek Pesanan
-                </a>
+                <div class="flex items-center gap-2">
+                    <a href="/admin/login" class="glass-card text-blue-900 text-xs font-extrabold px-3 py-2 rounded-full shadow-sm active-scale transition">
+                        🔒 Admin
+                    </a>
+                    <a href="/cek-pesanan" class="glass-card text-blue-900 text-xs font-extrabold px-3 py-2 rounded-full shadow-sm active-scale transition">
+                        Pesanan
+                    </a>
+                </div>
             </div>
 
             <!-- Card Saldo / Banner Promosi -->
@@ -73,13 +78,34 @@
                     <span class="text-[11px] font-extrabold text-slate-700">Token PLN</span>
                 </a>
 
-                <!-- Cek IP -->
-                <a href="/cek-ip" class="flex flex-col items-center space-y-2 group active-scale transition">
-                    <div class="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                <!-- Admin Panel Icon -->
+                <a href="/admin/login" class="flex flex-col items-center space-y-2 group active-scale transition">
+                    <div class="w-14 h-14 bg-gradient-to-tr from-slate-700 to-slate-900 rounded-2xl flex items-center justify-center text-white shadow-md shadow-slate-900/20 group-hover:scale-105 transition-transform">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     </div>
-                    <span class="text-[11px] font-extrabold text-slate-700">Cek IP</span>
+                    <span class="text-[11px] font-extrabold text-slate-700">Admin</span>
                 </a>
+            </div>
+        </div>
+
+        <!-- Section Fitur Keunggulan -->
+        <div class="px-5 py-3">
+            <div class="bg-slate-100 rounded-2xl p-4 space-y-3">
+                <p class="text-xs font-extrabold text-slate-800">Kenapa memilih Mosandy Store?</p>
+                <div class="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-600">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-blue-600">⚡</span> Proses Otomatis Detikan
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-blue-600">🛡️</span> Transaksi Aman 100%
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-blue-600">💸</span> Harga Paling Bersaing
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-blue-600">💬</span> CS Ramah & Siap Membantu
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -93,9 +119,9 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
                 <span class="text-[10px] font-bold mt-0.5">Cek IP</span>
             </a>
-            <a href="/cek-pesanan" class="flex flex-col items-center text-slate-400 hover:text-blue-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                <span class="text-[10px] font-bold mt-0.5">Pesanan</span>
+            <a href="/admin/login" class="flex flex-col items-center text-slate-400 hover:text-blue-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span class="text-[10px] font-bold mt-0.5">Admin</span>
             </a>
         </div>
 
