@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
@@ -14,29 +15,25 @@ class HomeController extends Controller
 
     public function category(Request $request, $slug = 'pulsa')
     {
-        // Ambil slug dari URL atau query string (misal: /layanan?type=pulsa)
-        if ($request->has('type')) {
-            $slug = $request->query('type');
-        } elseif ($request->has('category')) {
-            $slug = $request->query('category');
-        }
-
         $searchNumber = $request->query('phone');
         $cleanSlug = strtolower(trim(str_replace('-', ' ', $slug)));
 
-        // Ambil produk dari database
-        $products = DB::table('products')
-            ->where(function($q) use ($slug, $cleanSlug) {
-                $q->where('category_slug', 'LIKE', '%' . $slug . '%')
-                  ->orWhere('category_slug', 'LIKE', '%' . $cleanSlug . '%')
-                  ->orWhere('brand', 'LIKE', '%' . $cleanSlug . '%')
-                  ->orWhere('type', 'LIKE', '%' . $cleanSlug . '%');
-            })
-            ->get();
+        // Cek apakah tabel products ada
+        if (!Schema::hasTable('products')) {
+            $products = collect();
+        } else {
+            // Ambil produk berdasarkan pencarian kategori/brand/type
+            $products = DB::table('products')
+                ->where('category_slug', 'LIKE', '%' . $slug . '%')
+                ->orWhere('category_slug', 'LIKE', '%' . $cleanSlug . '%')
+                ->orWhere('brand', 'LIKE', '%' . $cleanSlug . '%')
+                ->orWhere('type', 'LIKE', '%' . $cleanSlug . '%')
+                ->get();
 
-        // Pengaman: Jika tidak ada produk yang cocok dengan slug, tampilkan semua produk agar tidak kosong
-        if ($products->isEmpty()) {
-            $products = DB::table('products')->get();
+            // Jika query spesifik kosong, ambil seluruh isi produk di DB agar halaman tidak 404/kosong
+            if ($products->isEmpty()) {
+                $products = DB::table('products')->get();
+            }
         }
 
         return view('category', [
