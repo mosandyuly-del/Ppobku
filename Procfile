@@ -1,1 +1,1 @@
-web: php artisan schedule:run --interval=3600 & php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+web: php artisan route:clear && php artisan cache:clear && php artisan config:clear && vendor/bin/heroku-php-apache2 public/

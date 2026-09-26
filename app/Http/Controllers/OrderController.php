@@ -3,82 +3,61 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\PaymentMethod;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    public function checkout(Request $request, $id)
+    {
+        // Cari produk berdasarkan ID atau SKU
+        $product = DB::table('products')->where('id', $id)->orWhere('buyer_sku_code', $id)->first();
+
+        if (!$product) {
+            return redirect('/')->with('error', 'Produk tidak ditemukan.');
+        }
+
+        $phone = $request->query('phone', '');
+
+        return view('checkout', [
+            'product' => $product,
+            'phone' => $phone
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'customer_no' => 'required|numeric',
-            'sku_code' => 'required|exists:products,sku_code',
-            'payment_method_id' => 'required|exists:payment_methods,id',
+            'product_id' => 'required',
+            'phone' => 'required',
+            'payment_method' => 'required'
         ]);
 
-        $product = Product::where('sku_code', $request->sku_code)->firstOrFail();
-        $invoiceNumber = 'INV' . date('YmdHis') . rand(100, 999);
+        $product = DB::table('products')->where('id', $request->product_id)->first();
+        $trx_id = 'TRX-' . strtoupper(uniqid());
 
-        $order = Order::create([
-            'invoice_number' => $invoiceNumber,
-            'customer_no' => $request->customer_no,
-            'sku_code' => $product->sku_code,
-            'price' => $product->price_sell,
-            'payment_method_id' => $request->payment_method_id,
-            'payment_status' => 'pending',
-            'trx_status' => 'pending',
+        // Simpan transaksi sederhana
+        DB::table('orders')->insert([
+            'trx_id' => $trx_id,
+            'product_name' => $product->name ?? 'Produk Digital',
+            'phone' => $request->phone,
+            'price' => $product->price_sell ?? $product->price ?? 0,
+            'status' => 'Pending',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
-        return redirect()->route('order.show', $order->invoice_number);
+        return redirect('/cek-pesanan?trx_id=' . $trx_id);
     }
 
-    public function show($invoice_number)
+    public function checkStatus(Request $request)
     {
-        $order = Order::with(['paymentMethod', 'product'])
-            ->where('invoice_number', $invoice_number)
-            ->firstOrFail();
+        $trx_id = $request->query('trx_id');
+        $order = null;
 
-        return view('order_detail', compact('order'));
-    }
-
-    public function uploadProof(Request $request, $invoice_number)
-    {
-        $request->validate([
-            'proof_of_payment' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
-
-        $order = Order::where('invoice_number', $invoice_number)->firstOrFail();
-
-        if ($request->hasFile('proof_of_payment')) {
-            $path = $request->file('proof_of_payment')->store('proofs', 'public');
-            $order->update([
-                'proof_of_payment' => $path,
-            ]);
+        if ($trx_id) {
+            $order = DB::table('orders')->where('trx_id', $trx_id)->first();
         }
 
-        return back()->with('success', 'Bukti pembayaran berhasil diunggah!');
-    }
-
-    public function checkStatusForm()
-    {
-        return view('check_status');
-    }
-
-    public function checkStatusSearch(Request $request)
-    {
-        $request->validate([
-            'query_search' => 'required|string',
-        ]);
-
-        $query = $request->query_search;
-
-        $orders = Order::with(['paymentMethod', 'product'])
-            ->where('invoice_number', $query)
-            ->orWhere('customer_no', $query)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('check_status', compact('orders', 'query'));
+        return view('check_status', ['order' => $order]);
     }
 }
