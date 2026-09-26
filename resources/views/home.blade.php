@@ -73,34 +73,13 @@
                     <span class="text-[11px] font-extrabold text-slate-700">Token PLN</span>
                 </a>
 
-                <!-- Games -->
-                <a href="/kategori/game" class="flex flex-col items-center space-y-2 group active-scale transition">
-                    <div class="w-14 h-14 bg-gradient-to-tr from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2H5z"/></svg>
+                <!-- Cek IP -->
+                <a href="/cek-ip" class="flex flex-col items-center space-y-2 group active-scale transition">
+                    <div class="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
                     </div>
-                    <span class="text-[11px] font-extrabold text-slate-700">Voucher Game</span>
+                    <span class="text-[11px] font-extrabold text-slate-700">Cek IP</span>
                 </a>
-            </div>
-        </div>
-
-        <!-- Section Fitur Keunggulan -->
-        <div class="px-5 py-3">
-            <div class="bg-slate-100 rounded-2xl p-4 space-y-3">
-                <p class="text-xs font-extrabold text-slate-800">Kenapa memilih Mosandy Store?</p>
-                <div class="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-600">
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-blue-600">⚡</span> Proses Otomatis Detikan
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-blue-600">🛡️</span> Transaksi Aman 100%
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-blue-600">💸</span> Harga Paling Bersaing
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-blue-600">💬</span> CS Ramah & Siap Membantu
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -109,6 +88,10 @@
             <a href="/" class="flex flex-col items-center text-blue-600">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z"/></svg>
                 <span class="text-[10px] font-extrabold mt-0.5">Beranda</span>
+            </a>
+            <a href="/cek-ip" class="flex flex-col items-center text-slate-400 hover:text-blue-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                <span class="text-[10px] font-bold mt-0.5">Cek IP</span>
             </a>
             <a href="/cek-pesanan" class="flex flex-col items-center text-slate-400 hover:text-blue-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>

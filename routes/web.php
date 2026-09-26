@@ -4,12 +4,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 
-// Rute Dasar Beranda & Layanan
+// Rute Beranda & Layanan
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kategori/{slug}', [HomeController::class, 'category'])->name('category');
 Route::get('/layanan/{slug}', [HomeController::class, 'category']);
 
-// Rute Dasar Checkout & Cek Pesanan
+// Rute Checkout & Cek Pesanan
 Route::get('/checkout/{id}', [OrderController::class, 'checkout'])->name('checkout');
 Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
 Route::get('/cek-pesanan', [OrderController::class, 'checkStatus'])->name('check.status');
+
+// Rute Fitur Cek IP
+Route::get('/cek-ip', [HomeController::class, 'checkIp'])->name('check.ip');
