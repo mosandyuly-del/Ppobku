@@ -13,7 +13,6 @@
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between p-4">
 
     <div class="max-w-md mx-auto w-full space-y-4 my-auto">
-        <!-- Header Pembayaran -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center space-y-3">
             <span class="text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 px-3 py-1 rounded-full">Instruksi Pembayaran</span>
             <h1 class="text-xl font-extrabold text-slate-900">Scan QRIS Untuk Bayar</h1>
@@ -26,7 +25,6 @@
             </div>
         </div>
 
-        <!-- Tampilan QRIS Resmi Mosandy cell -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center space-y-4">
             <div class="p-3 bg-white border-2 border-slate-900 rounded-2xl inline-block shadow-md">
                 <img src="/images/qris.jpg" 
