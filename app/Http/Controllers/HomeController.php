@@ -24,17 +24,17 @@ class HomeController extends Controller
             $keyword = 'pln';
         }
 
-        // Ambil produk berdasarkan kecocokan nama/kategori/type
+        // Ambil produk berdasarkan kecocokan nama, kategori, atau type
         $products = DB::table('products')
             ->where(function($q) use ($keyword, $slug) {
-                $q::whereRaw('LOWER(category) LIKE ?', ["%{$keyword}%"])
+                $q->whereRaw('LOWER(category) LIKE ?', ["%{$keyword}%"])
                   ->orWhereRaw('LOWER(category_slug) LIKE ?', ["%{$slug}%"])
                   ->orWhereRaw('LOWER(type) LIKE ?', ["%{$keyword}%"])
                   ->orWhereRaw('LOWER(name) LIKE ?', ["%{$keyword}%"]);
             })
             ->get();
 
-        // Jika tidak ada hasil spesifik, tampilkan seluruh produk aktif agar tidak pernah kosong
+        // Jika tidak ada hasil spesifik, tampilkan produk aktif agar tidak kosong
         if ($products->isEmpty()) {
             $products = DB::table('products')->limit(100)->get();
         }
