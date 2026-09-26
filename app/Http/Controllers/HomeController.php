@@ -14,10 +14,17 @@ class HomeController extends Controller
 
     public function category(Request $request, $slug = 'pulsa')
     {
+        // Ambil slug dari URL atau query string (misal: /layanan?type=pulsa)
+        if ($request->has('type')) {
+            $slug = $request->query('type');
+        } elseif ($request->has('category')) {
+            $slug = $request->query('category');
+        }
+
         $searchNumber = $request->query('phone');
         $cleanSlug = strtolower(trim(str_replace('-', ' ', $slug)));
 
-        // Pencarian fleksibel agar semua produk layanan tampil
+        // Ambil produk dari database
         $products = DB::table('products')
             ->where(function($q) use ($slug, $cleanSlug) {
                 $q->where('category_slug', 'LIKE', '%' . $slug . '%')
@@ -27,7 +34,7 @@ class HomeController extends Controller
             })
             ->get();
 
-        // Pengaman jika query spesifik kosong
+        // Pengaman: Jika tidak ada produk yang cocok dengan slug, tampilkan semua produk agar tidak kosong
         if ($products->isEmpty()) {
             $products = DB::table('products')->get();
         }
