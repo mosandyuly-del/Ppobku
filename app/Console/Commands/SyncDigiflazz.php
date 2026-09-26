@@ -13,13 +13,8 @@ class SyncDigiflazz extends Command
 
     public function handle()
     {
-        $username = env('DIGIFLAZZ_USERNAME');
-        $apiKey   = env('DIGIFLAZZ_KEY');
-
-        if (!$username || !$apiKey) {
-            $this->error('DIGIFLAZZ_USERNAME atau DIGIFLAZZ_KEY belum diisi di Environment Variables.');
-            return 1;
-        }
+        $username = env('DIGIFLAZZ_USERNAME', 'digadoDlVxag');
+        $apiKey   = env('DIGIFLAZZ_KEY', '4568ac7b-881d-53e4-8a5f-40589be68ac4');
 
         $sign = md5($username . $apiKey . 'pricelist');
 
@@ -31,33 +26,44 @@ class SyncDigiflazz extends Command
             'sign' => $sign,
         ]);
 
-        if ($response->failed()) {
-            $this->error('Gagal terhubung ke API Digiflazz.');
-            return 1;
+        $resData = $response->json();
+
+        // Tampilkan respon jika Digiflazz mengirimkan pesan error/notifikasi
+        if (isset($resData['data']['rc']) || isset($resData['data']['message'])) {
+            $this->error('Respon Digiflazz: ' . json_encode($resData));
+            return 0;
         }
 
-        $data = $response->json()['data'] ?? [];
+        $data = $resData['data'] ?? [];
 
-        if (empty($data)) {
-            $this->warn('Tidak ada data produk yang diterima dari Digiflazz.');
+        if (!is_array($data) || empty($data)) {
+            $this->warn('Respon API: ' . json_encode($resData));
             return 0;
         }
 
         $count = 0;
         foreach ($data as $item) {
-            $priceSell = ceil($item['price'] * 1.02); // Margin keuntungan 2%
+            if (!is_array($item) || !isset($item['price']) || !isset($item['buyer_sku_code'])) {
+                continue;
+            }
+
+            $price = (float) $item['price'];
+            $priceSell = ceil($price * 1.02);
+
+            $category = $item['category'] ?? 'Umum';
+            $categorySlug = strtolower(trim(str_replace(' ', '-', $category)));
 
             DB::table('products')->updateOrInsert(
                 ['buyer_sku_code' => $item['buyer_sku_code']],
                 [
-                    'name'          => $item['product_name'],
-                    'category'      => $item['category'],
-                    'category_slug' => strtolower(str_replace(' ', '-', $item['category'])),
-                    'brand'         => $item['brand'],
+                    'name'          => $item['product_name'] ?? 'Produk',
+                    'category'      => $category,
+                    'category_slug' => $categorySlug,
+                    'brand'         => $item['brand'] ?? 'PPOB',
                     'type'          => $item['type'] ?? 'PPOB',
-                    'price'         => $item['price'],
+                    'price'         => $price,
                     'price_sell'    => $priceSell,
-                    'status'        => $item['buyer_product_status'] ? 'Active' : 'Inactive',
+                    'status'        => (!empty($item['buyer_product_status'])) ? 'Active' : 'Inactive',
                     'description'   => $item['desc'] ?? '',
                     'updated_at'    => now(),
                 ]
