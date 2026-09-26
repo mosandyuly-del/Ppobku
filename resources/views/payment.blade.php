@@ -26,18 +26,15 @@
             <p class="text-[10px] text-blue-200 pt-1">Kode Transaksi: <span class="font-mono bg-white/20 px-2 py-0.5 rounded-md font-bold select-all">{{ $order->trx_id }}</span></p>
         </div>
 
-        <!-- Box Tampilan Gambar QRIS Asli Mosandy Cell -->
-        <div class="border border-slate-200 rounded-3xl p-4 bg-slate-50 text-center space-y-3 shadow-sm">
-            
-            <!-- Gambar QRIS Asli Tanpa Diubah -->
-            <div class="bg-white p-2 rounded-2xl border border-slate-200 inline-block shadow-md w-full overflow-hidden">
+        <!-- Tampilan Gambar QRIS Asli Mosandy Cell -->
+        <div class="border border-slate-200 rounded-3xl p-3 bg-white text-center space-y-3 shadow-md">
+            <div class="w-full overflow-hidden rounded-2xl">
                 <img src="/images/qris.jpg" 
                      alt="QRIS Mosandy Cell Asli" 
-                     class="w-full h-auto rounded-xl object-contain mx-auto"
-                     onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=10&data=00020101021126580014ID.GO.IDC.WWW01189360091500000000000215ID10265869510670303A015104520453033602ID5912Mosandy%20cell6013KOTA%20JAKARTA61051234563048821';">
+                     class="w-full h-auto rounded-xl object-contain mx-auto">
             </div>
 
-            <div class="space-y-1">
+            <div class="space-y-1 pb-1">
                 <p class="text-[11px] font-extrabold text-slate-800">Bisa di-scan dengan semua aplikasi:</p>
                 <p class="text-[10px] font-semibold text-slate-500">DANA, OVO, GoPay, ShopeePay, LinkAja, BCA, Mandiri, BRI, BNI, dll.</p>
             </div>
