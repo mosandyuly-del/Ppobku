@@ -14,36 +14,89 @@ class HomeController extends Controller
 
     public function category(Request $request, $slug = 'pulsa')
     {
-        $cleanSlug = strtolower(trim(str_replace('-', ' ', $slug)));
+        $phone = $request->query('phone', '');
+        $cleanSlug = strtolower(trim($slug));
 
-        // Pemetaan kata kunci untuk kategori Digiflazz
-        $keyword = $cleanSlug;
-        if ($cleanSlug == 'paket data' || $cleanSlug == 'data') {
-            $keyword = 'data';
-        } elseif ($cleanSlug == 'pln' || $cleanSlug == 'token pln') {
-            $keyword = 'pln';
+        // Deteksi Provider berdasarkan Awalan Nomor HP (Prefix)
+        $detectedBrand = $this->detectProvider($phone);
+
+        // Query Dasar Produk
+        $query = DB::table('products')->where('status', 'Active');
+
+        // 1. FILTER BERDASARKAN JENIS LAYANAN (Ketat)
+        if (in_array($cleanSlug, ['pulsa', 'pulsa-reguler'])) {
+            $query->where(function($q) {
+                $q->whereRaw('LOWER(category) LIKE ?', ['%pulsa%'])
+                  ->orWhereRaw('LOWER(category_slug) LIKE ?', ['%pulsa%'])
+                  ->orWhereRaw('LOWER(type) LIKE ?', ['%pulsa%']);
+            })->whereRaw('LOWER(name) NOT LIKE ?', ['%data%'])
+              ->whereRaw('LOWER(name) NOT LIKE ?', ['%kuota%']);
+
+        } elseif (in_array($cleanSlug, ['paket-data', 'data', 'kuota'])) {
+            $query->where(function($q) {
+                $q->whereRaw('LOWER(category) LIKE ?', ['%data%'])
+                  ->orWhereRaw('LOWER(category_slug) LIKE ?', ['%data%'])
+                  ->orWhereRaw('LOWER(type) LIKE ?', ['%data%'])
+                  ->orWhereRaw('LOWER(name) LIKE ?', ['%data%'])
+                  ->orWhereRaw('LOWER(name) LIKE ?', ['%kuota%']);
+            });
+
+        } elseif (in_array($cleanSlug, ['pln', 'token-pln', 'listrik'])) {
+            $query->where(function($q) {
+                $q->whereRaw('LOWER(category) LIKE ?', ['%pln%'])
+                  ->orWhereRaw('LOWER(category) LIKE ?', ['%listrik%'])
+                  ->orWhereRaw('LOWER(brand) LIKE ?', ['%pln%']);
+            });
         }
 
-        // Ambil produk berdasarkan kecocokan nama, kategori, atau type
-        $products = DB::table('products')
-            ->where(function($q) use ($keyword, $slug) {
-                $q->whereRaw('LOWER(category) LIKE ?', ["%{$keyword}%"])
-                  ->orWhereRaw('LOWER(category_slug) LIKE ?', ["%{$slug}%"])
-                  ->orWhereRaw('LOWER(type) LIKE ?', ["%{$keyword}%"])
-                  ->orWhereRaw('LOWER(name) LIKE ?', ["%{$keyword}%"]);
-            })
-            ->get();
+        // 2. FILTER BERDASARKAN PROVIDER / BRAND (Jika Nomor HP Diisi & Terdeteksi)
+        if (!empty($detectedBrand)) {
+            $query->whereRaw('LOWER(brand) LIKE ?', ['%' . strtolower($detectedBrand) . '%']);
+        }
 
-        // Jika tidak ada hasil spesifik, tampilkan produk aktif agar tidak kosong
+        $products = $query->orderBy('price_sell', 'asc')->get();
+
+        // Fallback jika tidak ditemukan spesifik brand
         if ($products->isEmpty()) {
-            $products = DB::table('products')->limit(100)->get();
+            $products = DB::table('products')->where('status', 'Active')->limit(50)->get();
         }
 
         return view('category', [
             'slug' => $slug,
             'products' => $products,
-            'phone' => $request->query('phone', '')
+            'phone' => $phone,
+            'detectedBrand' => $detectedBrand
         ]);
+    }
+
+    private function detectProvider($phone)
+    {
+        if (empty($phone)) return null;
+
+        // Normalisasi nomor
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($phone, '62')) {
+            $phone = '0' . substr($phone, 2);
+        }
+
+        $prefix = substr($phone, 0, 4);
+
+        $prefixes = [
+            'TELKOMSEL' => ['0811','0812','0813','0821','0822','0823','0851','0852','0853'],
+            'INDOSAT'   => ['0814','0815','0816','0855','0856','0857','0858'],
+            'XL'        => ['0817','0818','0819','0859','0877','0878'],
+            'AXIS'      => ['0831','0832','0833','0838'],
+            'TRI'       => ['0895','0896','0897','0898','0899'],
+            'SMARTFREN' => ['0881','0882','0883','0884','0885','0886','0887','0888','0889'],
+        ];
+
+        foreach ($prefixes as $brand => $list) {
+            if (in_array($prefix, $list)) {
+                return $brand;
+            }
+        }
+
+        return null;
     }
 
     public function checkIp(Request $request)
