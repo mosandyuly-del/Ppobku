@@ -11,11 +11,13 @@
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
 
     <div class="max-w-md mx-auto bg-white min-h-screen p-4 space-y-4 shadow-sm">
+        <!-- Header -->
         <div class="flex items-center space-x-3 border-b pb-3">
             <a href="/" class="text-slate-600 font-bold">&larr; Kembali</a>
-            <h1 class="text-lg font-extrabold capitalize">{{ str_replace('-', ' ', $slug) }}</h1>
+            <h1 class="text-lg font-extrabold capitalize">{{ str_replace('-', ' ', $slug ?? 'Layanan') }}</h1>
         </div>
 
+        <!-- Input Nomor HP & Deteksi Operator -->
         <div class="space-y-1">
             <label class="text-xs font-bold text-slate-600">Nomor HP / Tujuan</label>
             <div class="relative">
@@ -26,7 +28,8 @@
             </div>
         </div>
 
-        @if($showExpiryFilter)
+        <!-- Filter Masa Aktif HANYA MUNCUL DI PAKET DATA -->
+        @if($showExpiryFilter ?? false)
         <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-1">
             <label class="text-xs font-bold text-amber-900">Filter Masa Aktif Data</label>
             <select id="expiryFilter" class="w-full p-2 text-xs rounded-lg border border-amber-300 bg-white font-semibold">
@@ -39,15 +42,16 @@
         </div>
         @endif
 
+        <!-- Daftar Produk -->
         <div id="productList" class="space-y-2 pt-2">
-            @forelse($products as $product)
+            @forelse($products ?? [] as $product)
             <div class="product-item p-3 border border-slate-200 rounded-2xl flex justify-between items-center hover:border-blue-500 transition"
                  data-brand="{{ strtolower($product->brand ?? '') }}"
                  data-expiry="{{ $product->expiry_days ?? '' }}">
                 <div>
                     <p class="text-xs font-extrabold text-slate-900">{{ $product->name }}</p>
                     <p class="text-[10px] text-slate-500">{{ $product->description ?? 'Proses Otomatis 24 Jam' }}</p>
-                    <span class="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full inline-block mt-1">{{ $product->brand }}</span>
+                    <span class="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full inline-block mt-1">{{ $product->brand ?? 'PPOB' }}</span>
                 </div>
                 <div class="text-right">
                     <p class="text-sm font-black text-blue-600">Rp {{ number_format($product->price_sell ?? $product->price ?? 0, 0, ',', '.') }}</p>
@@ -60,6 +64,7 @@
         </div>
     </div>
 
+    <!-- Script Autodeteksi Realtime -->
     <script>
         const phoneInput = document.getElementById('phoneNumber');
         const operatorBadge = document.getElementById('operatorBadge');

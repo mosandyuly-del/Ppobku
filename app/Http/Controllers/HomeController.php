@@ -12,7 +12,7 @@ class HomeController extends Controller
         return view('home');
     }
 
-    public function category(Request $request, $slug)
+    public function category(Request $request, $slug = 'pulsa')
     {
         $searchNumber = $request->query('phone');
         $operator = $this->detectOperator($searchNumber);
@@ -30,7 +30,7 @@ class HomeController extends Controller
             'products' => $products,
             'phone' => $searchNumber,
             'operator' => $operator,
-            'showExpiryFilter' => in_array($slug, ['paket-data', 'data']),
+            'showExpiryFilter' => in_array(strtolower($slug), ['paket-data', 'data']),
         ]);
     }
 
