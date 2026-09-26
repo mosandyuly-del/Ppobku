@@ -58,10 +58,10 @@
                 <div class="mb-3">
                     <label class="block text-xs font-medium text-slate-500 mb-2">QRIS Saat Ini:</label>
                     @php
-                        $setting = class_exists('\App\Models\Setting') ? \App\Models\Setting::first() : null;
+                        $qrisSetting = \App\Models\Setting::where('key', 'qris_image')->first();
                     @endphp
-                    @if($setting && $setting->qris_image)
-                        <img src="{{ asset('storage/' . $setting->qris_image) }}" alt="QRIS Mosandy Cell" class="w-40 h-auto border rounded-xl p-1 bg-white shadow-sm">
+                    @if($qrisSetting && $qrisSetting->value)
+                        <img src="{{ asset('storage/' . $qrisSetting->value) }}" alt="QRIS Mosandy Cell" class="w-40 h-auto border rounded-xl p-1 bg-white shadow-sm">
                     @else
                         <p class="text-xs text-slate-400 italic">Belum ada gambar QRIS yang diunggah.</p>
                     @endif

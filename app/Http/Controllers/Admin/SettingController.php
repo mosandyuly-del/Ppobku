@@ -15,15 +15,23 @@ class SettingController extends Controller
             'qris_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $setting = Setting::first() ?? new Setting();
-
         if ($request->hasFile('qris_image')) {
-            if ($setting->qris_image && Storage::disk('public')->exists($setting->qris_image)) {
-                Storage::disk('public')->delete($setting->qris_image);
+            // Cari data setting berdasarkan key 'qris_image'
+            $setting = Setting::where('key', 'qris_image')->first();
+
+            if (!$setting) {
+                $setting = new Setting();
+                $setting->key = 'qris_image';
+            } else {
+                // Hapus gambar lama dari storage jika ada
+                if ($setting->value && Storage::disk('public')->exists($setting->value)) {
+                    Storage::disk('public')->delete($setting->value);
+                }
             }
 
+            // Simpan gambar baru ke storage/app/public/qris
             $path = $request->file('qris_image')->store('qris', 'public');
-            $setting->qris_image = $path;
+            $setting->value = $path;
             $setting->save();
         }
 
