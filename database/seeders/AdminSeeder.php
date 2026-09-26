@@ -3,25 +3,22 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 
 class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $userData = [
-            'name' => 'Admin',
-            'username' => 'admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('Als220426'),
-        ];
-
-        if (Schema::hasColumn('users', 'role')) {
-            $userData['role'] = 'admin';
-        }
-
-        User::updateOrCreate(['username' => 'admin'], $userData);
+        DB::table('users')->updateOrInsert(
+            ['email' => 'mosandy@admin.com'],
+            [
+                'name' => 'Mosandy Admin',
+                'password' => Hash::make('989819'),
+                'role' => 'admin',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
     }
 }
