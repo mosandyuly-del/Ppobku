@@ -10,17 +10,23 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kategori/{slug}', [HomeController::class, 'category'])->name('category');
 Route::get('/layanan/{slug}', [HomeController::class, 'category']);
 
-// Rute Checkout & Cek Pesanan
+// Rute Checkout, Cek Pesanan, & Cek IP
 Route::get('/checkout/{id}', [OrderController::class, 'checkout'])->name('checkout');
 Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
 Route::get('/cek-pesanan', [OrderController::class, 'checkStatus'])->name('check.status');
 Route::get('/cek-ip', [HomeController::class, 'checkIp'])->name('check.ip');
 
 // Rute Admin Panel
+Route::get('/admin', function() {
+    return redirect()->route('admin.login');
+});
 Route::get('/admin/login', [AdminController::class, 'showLoginForm'])->name('login');
+Route::get('/admin/login-page', [AdminController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AdminController::class, 'login']);
 Route::post('/admin/logout', [AdminController::class, 'logout']);
 
+// Rute Dashboard Admin Terproteksi & Tembak Orderan
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::post('/admin/orders/{id}/process', [AdminController::class, 'processOrder']);
 });
