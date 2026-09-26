@@ -10,9 +10,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kategori/{slug}', [HomeController::class, 'category'])->name('category');
 Route::get('/layanan/{slug}', [HomeController::class, 'category']);
 
-// Rute Checkout, Cek Pesanan, & Cek IP
+// Rute Checkout, Pembayaran, & Cek Pesanan
 Route::get('/checkout/{id}', [OrderController::class, 'checkout'])->name('checkout');
 Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
+Route::get('/payment/{trxId}', [OrderController::class, 'showPayment'])->name('payment.show');
 Route::get('/cek-pesanan', [OrderController::class, 'checkStatus'])->name('check.status');
 Route::get('/cek-ip', [HomeController::class, 'checkIp'])->name('check.ip');
 
@@ -25,7 +26,7 @@ Route::get('/admin/login-page', [AdminController::class, 'showLoginForm'])->name
 Route::post('/admin/login', [AdminController::class, 'login']);
 Route::post('/admin/logout', [AdminController::class, 'logout']);
 
-// Rute Dashboard Admin Terproteksi & Tembak Orderan
+// Rute Dashboard Admin & Tembak Orderan
 Route::middleware(['auth'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::post('/admin/orders/{id}/process', [AdminController::class, 'processOrder']);

@@ -7,17 +7,16 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function checkout(Request $request, $trx_id)
+    public function checkout($id)
     {
-        $product = DB::table('products')->where('id', $trx_id)->orWhere('buyer_sku_code', $trx_id)->first();
-
+        $product = DB::table('products')->where('id', $id)->first();
         if (!$product) {
-            return redirect('/')->with('error', 'Produk tidak ditemukan.');
+            return redirect('/')->with('error', 'Produk tidak ditemukan');
         }
 
         return view('checkout', [
             'product' => $product,
-            'phone' => $request->query('phone', '')
+            'phone'   => request('phone', '')
         ]);
     }
 
@@ -25,30 +24,67 @@ class OrderController extends Controller
     {
         $request->validate([
             'product_id' => 'required',
-            'phone' => 'required'
+            'phone'      => 'required|numeric'
         ]);
 
         $product = DB::table('products')->where('id', $request->product_id)->first();
-        $trx_id = 'TRX-' . strtoupper(uniqid());
+        if (!$product) {
+            return back()->with('error', 'Produk tidak valid.');
+        }
 
-        DB::table('orders')->insert([
-            'trx_id' => $trx_id,
-            'product_name' => $product->name ?? 'Produk Digital',
-            'phone' => $request->phone,
-            'price' => $product->price_sell ?? $product->price ?? 0,
-            'status' => 'Pending',
-            'created_at' => now(),
-            'updated_at' => now(),
+        $trxId = 'MS-' . date('YmdHis') . rand(10, 99);
+
+        $orderId = DB::table('orders')->insertGetId([
+            'trx_id'       => $trxId,
+            'product_id'   => $product->id,
+            'product_name' => $product->name,
+            'product_code' => $product->buyer_sku_code ?? 'PPOB',
+            'phone'        => $request->phone,
+            'price'        => $product->price_sell,
+            'status'       => 'Pending',
+            'created_at'   => now(),
+            'updated_at'   => now(),
         ]);
 
-        return redirect('/cek-pesanan?trx_id=' . $trx_id);
+        return redirect()->route('payment.show', $trxId);
+    }
+
+    public function showPayment($trxId)
+    {
+        $order = DB::table('orders')->where('trx_id', $trxId)->first();
+        if (!$order) {
+            return redirect('/')->with('error', 'Pesanan tidak ditemukan.');
+        }
+
+        // Format Pesan WhatsApp Konfirmasi ke Admin 08777480215
+        $adminWa = '628777480215';
+        $msg = "Halo Admin MOSANDY STORE, saya ingin konfirmasi pembayaran QRIS:\n\n"
+             . "📌 *Kode Trx:* {$order->trx_id}\n"
+             . "📲 *No. Tujuan:* {$order->phone}\n"
+             . "📦 *Produk:* {$order->product_name}\n"
+             . "💰 *Total Bayar:* Rp " . number_format($order->price, 0, ',', '.') . "\n\n"
+             . "Mohon dikonfirmasi dan diproses. Terima kasih!";
+
+        $waUrl = "https://wa.me/{$adminWa}?text=" . urlencode($msg);
+
+        return view('payment', [
+            'order' => $order,
+            'waUrl' => $waUrl
+        ]);
     }
 
     public function checkStatus(Request $request)
     {
-        $trx_id = $request->query('trx_id');
-        $order = $trx_id ? DB::table('orders')->where('trx_id', $trx_id)->first() : null;
+        $trxId = $request->query('trx_id');
+        $order = null;
 
-        return view('check_status', ['order' => $order]);
+        if ($trxId) {
+            $order = DB::table('orders')->where('trx_id', $trxId)->orWhere('phone', $trxId)->orderBy('id', 'desc')->first();
+        }
+
+        return view('check_status', [
+            'order' => $order,
+            'search' => $trxId
+        ]);
     }
 }
