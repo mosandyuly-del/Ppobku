@@ -26,18 +26,20 @@
             </div>
         </div>
 
-        <!-- Tampilan QRIS HD -->
+        <!-- Tampilan QRIS Resmi Mosandy cell -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center space-y-4">
-            <div class="p-4 bg-white border-2 border-slate-900 rounded-2xl inline-block shadow-md">
-                <!-- Tampilan QRIS dengan Rasio Jelas & Mudah Di-Scan -->
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=00020101021126580014ID.LINKAJA.WWW01189360091100223000000215MOSANDY%20CELL5204581253033605802ID5912MOSANDY%20CELL6007JEMBER6304C1C7" 
-                     alt="QRIS Mosandy Cell" 
-                     class="w-64 h-64 object-contain mx-auto rounded-lg">
+            <div class="p-3 bg-white border-2 border-slate-900 rounded-2xl inline-block shadow-md">
+                <img src="/images/qris.jpg" 
+                     alt="QRIS Mosandy cell" 
+                     class="w-72 h-auto object-contain mx-auto rounded-lg">
             </div>
             
-            <div class="text-xs font-bold text-slate-700">
-                <p>An. <span class="font-extrabold text-blue-600">Mosandy Cell / DANA</span></p>
-                <p class="text-[11px] text-slate-400 mt-0.5">Mendukung Semua Merchant QRIS Nasional</p>
+            <div class="text-xs font-bold text-slate-700 space-y-1">
+                <p class="text-base font-black text-slate-900">Mosandy cell</p>
+                <p class="text-[11px] text-slate-500">NMID: ID1026586951067</p>
+                <p class="text-[10px] text-emerald-600 font-extrabold uppercase bg-emerald-50 py-1 px-3 rounded-full inline-block mt-1">
+                    ✓ DANA Bisnis • QRIS Nasional
+                </p>
             </div>
 
             <div class="pt-2">
