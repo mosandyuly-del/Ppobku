@@ -31,3 +31,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::post('/admin/orders/{id}/process', [AdminController::class, 'processOrder']);
 });
+Route::put('/admin/settings/qris', [App\Http\Controllers\Admin\SettingController::class, 'updateQris'])->name('admin.settings.update-qris');
+Route::put('/admin/settings/qris', [App\Http\Controllers\Admin\SettingController::class, 'updateQris'])->name('admin.settings.update-qris');
