@@ -26,18 +26,15 @@
             <p class="text-[10px] text-blue-200 pt-1">Kode Transaksi: <span class="font-mono bg-white/20 px-2 py-0.5 rounded-md font-bold select-all">{{ $order->trx_id }}</span></p>
         </div>
 
-        <!-- Box Tampilan QRIS Mosandy Cell -->
-        <div class="border border-slate-200 rounded-3xl p-5 bg-slate-50 text-center space-y-4 shadow-sm">
-            <div>
-                <h3 class="text-sm font-black text-slate-900">Mosandy cell</h3>
-                <p class="text-[10px] text-slate-500 font-bold">NMID : ID1026586951067</p>
-            </div>
-
-            <!-- Tampilan Kode QR Valid High Resolution -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 inline-block shadow-md max-w-[280px] mx-auto">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=10&data=00020101021126580014ID.GO.IDC.WWW01189360091500000000000215ID10265869510670303A015104520453033602ID5912Mosandy%20cell6013KOTA%20JAKARTA61051234563048821" 
-                     alt="QRIS Mosandy Cell Valid" 
-                     class="w-full h-auto rounded-lg">
+        <!-- Box Tampilan Gambar QRIS Asli Mosandy Cell -->
+        <div class="border border-slate-200 rounded-3xl p-4 bg-slate-50 text-center space-y-3 shadow-sm">
+            
+            <!-- Gambar QRIS Asli Tanpa Diubah -->
+            <div class="bg-white p-2 rounded-2xl border border-slate-200 inline-block shadow-md w-full overflow-hidden">
+                <img src="/images/qris.jpg" 
+                     alt="QRIS Mosandy Cell Asli" 
+                     class="w-full h-auto rounded-xl object-contain mx-auto"
+                     onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=350x350&margin=10&data=00020101021126580014ID.GO.IDC.WWW01189360091500000000000215ID10265869510670303A015104520453033602ID5912Mosandy%20cell6013KOTA%20JAKARTA61051234563048821';">
             </div>
 
             <div class="space-y-1">
