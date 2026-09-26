@@ -3,91 +3,69 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class SyncDigiflazz extends Command
 {
     protected $signature = 'digiflazz:sync';
-    protected $description = 'Sync product prices from Digiflazz Production API';
+    protected $description = 'Sync price list from Digiflazz API';
 
     public function handle()
     {
-        if (!Schema::hasTable('products')) {
-            $this->error('Tabel products tidak ditemukan!');
+        $username = env('DIGIFLAZZ_USERNAME');
+        $apiKey   = env('DIGIFLAZZ_KEY');
+
+        if (!$username || !$apiKey) {
+            $this->error('DIGIFLAZZ_USERNAME atau DIGIFLAZZ_KEY belum diisi di Environment Variables.');
             return 1;
         }
 
-        // Ambil konfigurasi dari DB Settings jika ada, fallback ke env
-        $getSetting = function ($key, $default = null) {
-            if (Schema::hasTable('settings')) {
-                $item = DB::table('settings')->where('key', $key)->first();
-                if ($item && !empty($item->value)) {
-                    return $item->value;
-                }
-            }
-            return env($key, $default);
-        };
+        $sign = md5($username . $apiKey . 'pricelist');
 
-        $username = $getSetting('DIGIFLAZZ_USERNAME');
-        $apiKey = $getSetting('DIGIFLAZZ_KEY');
-        $markupFlat = (int) $getSetting('MARKUP_FLAT', 1500);
+        $this->info('Mengambil data dari Digiflazz...');
 
-        if ($username && $apiKey) {
-            $sign = md5($username . $apiKey . 'pricelist');
-            
-            $payload = [
-                'cmd' => 'prepaid',
-                'username' => $username,
-                'sign' => $sign
-            ];
+        $response = Http::post('https://api.digiflazz.com/v1/price-list', [
+            'cmd' => 'prepaid',
+            'username' => $username,
+            'sign' => $sign,
+        ]);
 
-            $ch = curl_init('https://api.digiflazz.com/v1/price-list');
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-            
-            $response = curl_exec($ch);
-            curl_close($ch);
-
-            $result = json_decode($response, true);
-
-            if (isset($result['data']) && is_array($result['data']) && count($result['data']) > 0) {
-                foreach ($result['data'] as $item) {
-                    $modal = $item['price'] ?? 0;
-                    $hargaJual = $modal + $markupFlat;
-                    $skuCode = $item['buyer_sku_code'] ?? '';
-
-                    if (empty($skuCode)) continue;
-
-                    $statusBuyer = $item['buyer_product_status'] ?? true;
-                    $statusSeller = $item['seller_product_status'] ?? true;
-                    $status = ($statusBuyer && $statusSeller) ? 'active' : 'inactive';
-
-                    DB::table('products')->updateOrInsert(
-                        ['code' => $skuCode],
-                        [
-                            'sku' => $skuCode,
-                            'name' => $item['product_name'] ?? 'Produk PPOB',
-                            'category' => $item['category'] ?? 'Umum',
-                            'brand' => $item['brand'] ?? 'Digiflazz',
-                            'price_original' => $modal,
-                            'price' => $hargaJual,
-                            'status' => $status,
-                            'updated_at' => now(),
-                        ]
-                    );
-                }
-                $this->info('Berhasil menyinkronkan data Digiflazz Production!');
-            } else {
-                $this->error('Gagal mengambil data dari Digiflazz. Periksa Username & Production Key.');
-            }
-        } else {
-            $this->error('Username atau API Key Digiflazz belum dikonfigurasi.');
+        if ($response->failed()) {
+            $this->error('Gagal terhubung ke API Digiflazz.');
+            return 1;
         }
 
+        $data = $response->json()['data'] ?? [];
+
+        if (empty($data)) {
+            $this->warn('Tidak ada data produk yang diterima dari Digiflazz.');
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($data as $item) {
+            $priceSell = ceil($item['price'] * 1.02); // Margin keuntungan 2%
+
+            DB::table('products')->updateOrInsert(
+                ['buyer_sku_code' => $item['buyer_sku_code']],
+                [
+                    'name'          => $item['product_name'],
+                    'category'      => $item['category'],
+                    'category_slug' => strtolower(str_replace(' ', '-', $item['category'])),
+                    'brand'         => $item['brand'],
+                    'type'          => $item['type'] ?? 'PPOB',
+                    'price'         => $item['price'],
+                    'price_sell'    => $priceSell,
+                    'status'        => $item['buyer_product_status'] ? 'Active' : 'Inactive',
+                    'description'   => $item['desc'] ?? '',
+                    'updated_at'    => now(),
+                ]
+            );
+            $count++;
+        }
+
+        $this->info("Berhasil menyinkronkan {$count} produk dari Digiflazz!");
         return 0;
     }
 }
