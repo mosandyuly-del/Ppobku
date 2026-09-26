@@ -322,3 +322,7 @@ Route::get('/cek-ip', function() {
     $ip = @file_get_contents('https://api.ipify.org');
     return "IP Railway Kamu Saat Ini: " . ($ip ?: 'Gagal mengambil IP');
 });
+
+Route::get('/flyer', function () {
+    return view('flyer');
+});
