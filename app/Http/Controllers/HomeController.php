@@ -14,27 +14,29 @@ class HomeController extends Controller
 
     public function category(Request $request, $slug = 'pulsa')
     {
-        // Normalisasi kata kunci slug
         $cleanSlug = strtolower(trim(str_replace('-', ' ', $slug)));
 
-        // Cari produk berdasarkan category_slug, category, atau brand
+        // Pemetaan kata kunci untuk kategori Digiflazz
+        $keyword = $cleanSlug;
+        if ($cleanSlug == 'paket data' || $cleanSlug == 'data') {
+            $keyword = 'data';
+        } elseif ($cleanSlug == 'pln' || $cleanSlug == 'token pln') {
+            $keyword = 'pln';
+        }
+
+        // Ambil produk berdasarkan kecocokan nama/kategori/type
         $products = DB::table('products')
-            ->where(function($query) use ($slug, $cleanSlug) {
-                $query->where('category_slug', 'like', "%{$slug}%")
-                      ->orWhere('category', 'like', "%{$cleanSlug}%")
-                      ->orWhere('type', 'like', "%{$cleanSlug}%");
+            ->where(function($q) use ($keyword, $slug) {
+                $q::whereRaw('LOWER(category) LIKE ?', ["%{$keyword}%"])
+                  ->orWhereRaw('LOWER(category_slug) LIKE ?', ["%{$slug}%"])
+                  ->orWhereRaw('LOWER(type) LIKE ?', ["%{$keyword}%"])
+                  ->orWhereRaw('LOWER(name) LIKE ?', ["%{$keyword}%"]);
             })
-            ->where('status', 'Active')
-            ->orderBy('price_sell', 'asc')
             ->get();
 
-        // Jika tidak ditemukan hasil spesifik, ambil semua produk aktif agar halaman tidak kosong
+        // Jika tidak ada hasil spesifik, tampilkan seluruh produk aktif agar tidak pernah kosong
         if ($products->isEmpty()) {
-            $products = DB::table('products')
-                ->where('status', 'Active')
-                ->orderBy('price_sell', 'asc')
-                ->limit(50)
-                ->get();
+            $products = DB::table('products')->limit(100)->get();
         }
 
         return view('category', [
