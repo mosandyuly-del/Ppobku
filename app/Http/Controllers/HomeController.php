@@ -17,15 +17,17 @@ class HomeController extends Controller
         $searchNumber = $request->query('phone');
         $cleanSlug = strtolower(trim(str_replace('-', ' ', $slug)));
 
-        // Pencarian aman produk berdasarkan kategori/brand/tipe
+        // Pencarian fleksibel agar semua produk layanan tampil
         $products = DB::table('products')
-            ->where('category_slug', 'LIKE', '%' . $slug . '%')
-            ->orWhere('category_slug', 'LIKE', '%' . $cleanSlug . '%')
-            ->orWhere('brand', 'LIKE', '%' . $cleanSlug . '%')
-            ->orWhere('type', 'LIKE', '%' . $cleanSlug . '%')
+            ->where(function($q) use ($slug, $cleanSlug) {
+                $q->where('category_slug', 'LIKE', '%' . $slug . '%')
+                  ->orWhere('category_slug', 'LIKE', '%' . $cleanSlug . '%')
+                  ->orWhere('brand', 'LIKE', '%' . $cleanSlug . '%')
+                  ->orWhere('type', 'LIKE', '%' . $cleanSlug . '%');
+            })
             ->get();
 
-        // Jika tidak ditemukan filter spesifik, tampilkan seluruh produk agar tidak kosong
+        // Pengaman jika query spesifik kosong
         if ($products->isEmpty()) {
             $products = DB::table('products')->get();
         }

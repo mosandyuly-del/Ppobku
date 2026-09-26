@@ -11,43 +11,25 @@
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
 
     <div class="max-w-md mx-auto bg-white min-h-screen p-4 space-y-4 shadow-sm">
-        <!-- Header -->
         <div class="flex items-center space-x-3 border-b pb-3">
             <a href="/" class="text-slate-600 font-bold">&larr; Kembali</a>
             <h1 class="text-lg font-extrabold capitalize">{{ str_replace('-', ' ', $slug ?? 'Layanan') }}</h1>
         </div>
 
-        <!-- Input Nomor HP & Deteksi Operator -->
         <div class="space-y-1">
             <label class="text-xs font-bold text-slate-600">Nomor HP / Tujuan</label>
             <div class="relative">
                 <input type="tel" id="phoneNumber" placeholder="Masukkan nomor HP (08xxx)" 
                        value="{{ $phone ?? '' }}"
-                       class="w-full p-3 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
-                <span id="operatorBadge" class="absolute right-3 top-3 text-xs font-black px-2 py-1 rounded bg-blue-100 text-blue-700 hidden"></span>
+                       class="w-full p-3 pr-24 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                <span id="providerBadge" class="absolute right-3 top-2.5 text-[10px] font-black px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 hidden uppercase tracking-wider"></span>
             </div>
         </div>
 
-        <!-- Filter Masa Aktif HANYA MUNCUL DI PAKET DATA -->
-        @if($showExpiryFilter ?? false)
-        <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-1">
-            <label class="text-xs font-bold text-amber-900">Filter Masa Aktif Data</label>
-            <select id="expiryFilter" class="w-full p-2 text-xs rounded-lg border border-amber-300 bg-white font-semibold">
-                <option value="">Semua Masa Aktif</option>
-                <option value="1">1 Hari</option>
-                <option value="3">3 Hari</option>
-                <option value="7">7 Hari</option>
-                <option value="30">30 Hari</option>
-            </select>
-        </div>
-        @endif
-
-        <!-- Daftar Produk -->
         <div id="productList" class="space-y-2 pt-2">
             @forelse($products ?? [] as $product)
             <div class="product-item p-3 border border-slate-200 rounded-2xl flex justify-between items-center hover:border-blue-500 transition"
-                 data-brand="{{ strtolower($product->brand ?? '') }}"
-                 data-expiry="{{ $product->expiry_days ?? '' }}">
+                 data-brand="{{ strtolower(($product->brand ?? '') . ' ' . ($product->name ?? '')) }}">
                 <div>
                     <p class="text-xs font-extrabold text-slate-900">{{ $product->name }}</p>
                     <p class="text-[10px] text-slate-500">{{ $product->description ?? 'Proses Otomatis 24 Jam' }}</p>
@@ -64,54 +46,54 @@
         </div>
     </div>
 
-    <!-- Script Autodeteksi Realtime -->
     <script>
         const phoneInput = document.getElementById('phoneNumber');
-        const operatorBadge = document.getElementById('operatorBadge');
+        const providerBadge = document.getElementById('providerBadge');
         const productItems = document.querySelectorAll('.product-item');
-        const expiryFilter = document.getElementById('expiryFilter');
 
-        const prefixes = {
+        const providerPrefixes = {
             'telkomsel': ['0811', '0812', '0813', '0821', '0822', '0823', '0851', '0852', '0853'],
             'indosat': ['0814', '0815', '0816', '0855', '0856', '0857', '0858'],
             'xl': ['0817', '0818', '0819', '0859', '0877', '0878'],
             'axis': ['0831', '0832', '0833', '0838'],
-            'tri': ['0895', '0896', '0897', '0898', '0899'],
+            'three': ['0895', '0896', '0897', '0898', '0899'],
             'smartfren': ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889']
         };
 
         function filterProducts() {
-            let val = phoneInput.value.replace(/[^0-9]/g, '');
-            if (val.startsWith('62')) val = '0' + val.substring(2);
-            
-            let detectedBrand = '';
-            if (val.length >= 4) {
-                const prefix = val.substring(0, 4);
-                for (let brand in prefixes) {
-                    if (prefixes[brand].includes(prefix)) {
-                        detectedBrand = brand;
+            let num = phoneInput.value.replace(/[^0-9]/g, '');
+            if (num.startsWith('62')) num = '0' + num.substring(2);
+
+            let detected = '';
+            if (num.length >= 4) {
+                const prefix = num.substring(0, 4);
+                for (let provider in providerPrefixes) {
+                    if (providerPrefixes[provider].includes(prefix)) {
+                        detected = provider;
                         break;
                     }
                 }
             }
 
-            if (detectedBrand) {
-                operatorBadge.innerText = detectedBrand.toUpperCase();
-                operatorBadge.classList.remove('hidden');
+            if (detected) {
+                providerBadge.innerText = detected.toUpperCase();
+                providerBadge.classList.remove('hidden');
             } else {
-                operatorBadge.classList.add('hidden');
+                providerBadge.classList.add('hidden');
             }
 
-            const selectedExpiry = expiryFilter ? expiryFilter.value : '';
-
             productItems.forEach(item => {
-                const itemBrand = item.getAttribute('data-brand');
-                const itemExpiry = item.getAttribute('data-expiry');
+                const brand = item.getAttribute('data-brand') || '';
+                let matchProvider = true;
+                if (detected && num.length >= 4) {
+                    if (detected === 'three') {
+                        matchProvider = brand.includes('three') || brand.includes('tri');
+                    } else {
+                        matchProvider = brand.includes(detected);
+                    }
+                }
 
-                let matchBrand = !detectedBrand || itemBrand.includes(detectedBrand);
-                let matchExpiry = !selectedExpiry || itemExpiry === selectedExpiry;
-
-                if (matchBrand && matchExpiry) {
+                if (matchProvider) {
                     item.classList.remove('hidden');
                 } else {
                     item.classList.add('hidden');
@@ -120,7 +102,7 @@
         }
 
         phoneInput.addEventListener('input', filterProducts);
-        if (expiryFilter) expiryFilter.addEventListener('change', filterProducts);
+        filterProducts();
     </script>
 </body>
 </html>

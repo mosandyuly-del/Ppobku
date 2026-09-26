@@ -22,29 +22,15 @@
             <p class="text-2xl font-black text-blue-600">Rp {{ number_format($order->price, 0, ',', '.') }}</p>
         </div>
 
-        <!-- Tampilan QRIS Mosandy Cell -->
         <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
-            <p class="text-xs font-bold text-slate-700">Scan QRIS di bawah ini untuk membayar:</p>
+            <p class="text-xs font-bold text-slate-700">Scan QRIS Mosandy Cell di bawah ini:</p>
             <div class="bg-white p-2 rounded-xl shadow-inner inline-block border">
-                <!-- Menampilkan gambar QRIS Mosandy Cell -->
                 <img src="/assets/images/qris-mosandy.jpg" alt="QRIS Mosandy Cell" class="w-64 mx-auto rounded-lg" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=MosandyCell-{{ $order->trx_id }}'">
             </div>
             <div class="text-[11px] text-slate-500 font-medium">
                 <p class="font-extrabold text-slate-800">Mosandy Cell</p>
                 <p>NMID: ID1026586951067</p>
-                <p class="text-[10px] text-slate-400 mt-1">Dapat di-scan menggunakan DANA, GoPay, OVO, ShopeePay, BCA, Mandiri, BRI, & aplikasi e-wallet / m-banking lainnya.</p>
             </div>
-        </div>
-
-        <div class="text-left bg-blue-50 p-3 rounded-xl space-y-1 text-xs">
-            <p class="font-bold text-blue-900">Cara Pembayaran:</p>
-            <ol class="list-decimal list-inside text-blue-800 space-y-0.5 text-[11px]">
-                <li>Simpan / Screenshot gambar QRIS di atas.</li>
-                <li>Buka aplikasi m-Banking atau E-Wallet pilihan Anda.</li>
-                <li>Pilih menu <b>Scan / QRIS</b> lalu unggah screenshot QRIS.</li>
-                <li>Masukkan nominal presisi: <b>Rp {{ number_format($order->price, 0, ',', '.') }}</b>.</li>
-                <li>Selesaikan pembayaran.</li>
-            </ol>
         </div>
 
         <a href="/cek-pesanan?trx_id={{ $order->trx_id }}" class="block w-full bg-blue-600 text-white font-extrabold py-3 rounded-xl shadow-md text-sm">
