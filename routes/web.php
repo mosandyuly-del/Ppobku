@@ -44,3 +44,4 @@ Route::get('/reset-admin', function () {
     $user->save();
     return 'Berhasil reset admin! Silakan login.';
 });
+Route::post('/logout', function () { Auth::logout(); request()->session()->invalidate(); request()->session()->regenerateToken(); return redirect('/admin/login'); })->name('logout');
